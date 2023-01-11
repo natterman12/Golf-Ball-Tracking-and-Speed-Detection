@@ -40,13 +40,12 @@ entered = False
 #coord of polygon in frame::: [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
 coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
 
-#Distance between two vertical lines in (meter/ft)
-dist = 12
+speed = 0
 
-timeMark = time.time()
 dtFIL = 0
-#tim1 = time.time()
-tim1 = timeMark
+
+tim1 = 0
+tim2 = 0
 
 
 
@@ -230,46 +229,42 @@ while True:
 
                         else:
 
-                            if (x >= coord[1][0] and entered == False):  # coord[0][0] and y == coord[0][1])
+                            if (x >= coord[1][0] and entered == False):
                                 cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 255, 0),2)  # Changes line color to green
                                 tim1 = frameTime
-                                print("Ball Entered.")
-                                print(tim1)
-                                print(center)
+                                print("Ball Entered. Position: "+str(center)) 
                                 startPos = center
                                 entered = True
-                                shottimer = 0
                                 # update the points and tims queues
                                 pts.appendleft(center)
                                 tims.appendleft(frameTime)
                             else:
 
-                                if ( x >= coord[0][0] and entered == True):  # (x >= coord[2][0] and y == coord[2][1]):
+                                if ( x >= coord[0][0] and entered == True):
                                     cv2.line(frame, (coord[0][0], coord[0][1]), (coord[2][0], coord[2][1]), (0, 255, 0),2)  # Changes line color to green
                                     tim2 = frameTime # Final time
-                                    print("Ball Left.")
-                                    print(tim2)                                  
-                                    print(center)
+                                    print("Ball Left. Position: "+str(center)) 
                                     endPos = center
                                     # calculate the distance traveled by the ball in pixel
                                     a = endPos[0] - startPos[0]
                                     b = endPos[1] - startPos[1]
                                     distanceTraveled = math.sqrt( a*a + b*b )
-                                    print(distanceTraveled)
-                                    # convert the distance traveled to inches using the pixel ratio and then to miles
                                     if not pixelmmratio is None:
+                                        # convert the distance traveled to mm using the pixel ratio
                                         distanceTraveledMM = distanceTraveled / pixelmmratio
+                                        # take the time diff from ball entered to this frame
+                                        timeElapsedSeconds = (tim2 - tim1)
+                                        # calculate the speed in MPH
+                                        speed = ((distanceTraveledMM / 1000 / 1000) / (timeElapsedSeconds)) * 60 * 60 * 0.621371
+                                        # debug out
+                                        print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
+                                        print("Distance travelled in MM: "+str(distanceTraveledMM))
+                                        print("Speed: "+str(speed)+" MPH")
+                                        # update the points and tims queues
+                                        pts.appendleft(center)
+                                        tims.appendleft(frameTime)
                                     
-                                    timeElapsedSeconds = (tim2 - tim1)
-                                    print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
-                                    print("Distance travelled in MM: "+str(distanceTraveledMM))
-                                    # calculate the speed in MPH
-                                    speed = ((distanceTraveledMM / 1000 / 1000) / (timeElapsedSeconds)) * 60 * 60 * 0.621371
-                                    print("Speed: "+str(speed)+" MPH")
-                                    entered = False
-                                    # update the points and tims queues
-                                    pts.appendleft(center)
-                                    tims.appendleft(frameTime)
+                                    
 
     # loop over the set of tracked points
     for i in range(1, len(pts)):
@@ -282,20 +277,31 @@ while True:
         # draw the connecting lines
         thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 1.5)
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
-        print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
-        
+        # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
 
-    # show the frame to our screen
-    dt = time.time() - timeMark
-    timeMark = time.time()
-    dtFIL = .9 * dtFIL + .1 * dt
-    fps = 1 / dtFIL
-    #print('fps: ', fps)
+    timeSinceEntered = (frameTime - tim2)
+
+    if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds):
+        print("----- Shot Complete --------")
+        print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
+        print("Distance travelled in MM: "+str(distanceTraveledMM))
+        print("Speed: "+str(speed)+" MPH")
+        print("----- Data reset --------")
+        entered = False
+        speed = 0
+        timeSinceEntered = 0
+        tim1 = 0
+        tim2 = 0
+        distanceTraveledMM = 0
+        timeElapsedSeconds = 0
+        pixelmmratio = 0
+        pts.clear
+        tims.clear
+
+        # Further clearing - startPos, endPos
     
     cv2.putText(frame,"entered:"+str(entered),(20,180),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     
-    cv2.putText(frame,"fps:"+str(fps),(20,200),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-
     out1.write(frame)
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
