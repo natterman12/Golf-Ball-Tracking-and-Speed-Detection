@@ -34,6 +34,7 @@ startCandidates = []
 
 # Initialize Entered indicator
 entered = False
+started = False
 
 #coord of polygon in frame::: [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
 coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
@@ -86,7 +87,7 @@ time.sleep(2.0)
 
 while True:
     # wait for debugging
-    cv2.waitKey(10)
+    # cv2.waitKey(10)
 
     # grab the current frame
     frame = vs.read()
@@ -208,7 +209,8 @@ while True:
                             print("Start Position: "+ str(startPos[0]) +":" + str(startPos[1]))
                             # Calculate the pixel per mm ratio according to z value of circle and standard radius of 2133 mm
                             pixelmmratio = circle[2] / golfballradius
-                            print("Pixel ratio to mm: " +str(pixelmmratio))                
+                            print("Pixel ratio to mm: " +str(pixelmmratio))    
+                            started = True            
                             entered = False
                             # update the points and tims queues
                             pts.clear
@@ -218,7 +220,7 @@ while True:
 
                         else:
 
-                            if (x >= coord[1][0] and entered == False):
+                            if (x >= coord[1][0] and entered == False and started == True):
                                 cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 255, 0),2)  # Changes line color to green
                                 tim1 = frameTime
                                 print("Ball Entered. Position: "+str(center)) 
@@ -229,7 +231,7 @@ while True:
                                 tims.appendleft(frameTime)
                             else:
 
-                                if ( x >= coord[0][0] and entered == True):
+                                if ( x >= coord[0][0] and entered == True and started == True):
                                     cv2.line(frame, (coord[0][0], coord[0][1]), (coord[2][0], coord[2][1]), (0, 255, 0),2)  # Changes line color to green
                                     tim2 = frameTime # Final time
                                     print("Ball Left. Position: "+str(center)) 
@@ -276,6 +278,7 @@ while True:
         print("Distance travelled in MM: "+str(distanceTraveledMM))
         print("Speed: "+str(speed)+" MPH")
         print("----- Data reset --------")
+        started = False
         entered = False
         speed = 0
         timeSinceEntered = 0
