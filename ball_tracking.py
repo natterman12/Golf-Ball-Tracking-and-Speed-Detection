@@ -17,8 +17,6 @@ x2=400
 y1=10
 y2=300
 
-getcontext().prec = 2
-
 golfballradius = 21.33; # in mm
 
 
@@ -47,9 +45,6 @@ dtFIL = 0
 tim1 = 0
 tim2 = 0
 
-
-
-fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 out1 = cv2.VideoWriter('Ball-New.mp4',0x00000021, 60.0, (640, 360))
 
 # construct the argument parse and parse the arguments
@@ -68,10 +63,11 @@ args = vars(ap.parse_args())
 # lower_white = np.array([52,0,211])
 # upper_white = np.array([105,255,255])
 
-# Create the color Finder object
+# Create the color Finder object set to True if you need to Find the color
 myColorFinder = ColorFinder(False)
-hsvVals = {'hmin': 0, 'smin': 185, 'vmin': 0, 'hmax': 40, 'smax': 255, 'vmax': 255}
-# {'hmin': 52, 'smin': 0, 'vmin': 211, 'hmax': 105, 'smax': 255, 'vmax': 255}
+#hsvVals = {'hmin': 0, 'smin': 185, 'vmin': 0, 'hmax': 40, 'smax': 255, 'vmax': 255}
+#hsvVals = {'hmin': 52, 'smin': 0, 'vmin': 211, 'hmax': 105, 'smax': 255, 'vmax': 255}
+hsvVals = {'hmin': 164, 'smin': 0, 'vmin': 0, 'hmax': 179, 'smax': 255, 'vmax': 255}
 
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
@@ -79,7 +75,7 @@ tims = deque(maxlen=args["buffer"])
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-    vs = VideoStream(0,False, (640,480)).start()
+    vs = VideoStream(0).start()
 
 # otherwise, grab a reference to the video file
 else:
@@ -88,21 +84,9 @@ else:
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
-# keep looping
-# while True:
-# grab the current frame
-#	frame = vs.read()
-
-# handle the frame from VideoCapture or VideoStream
-#	frame = frame[1] if args.get("video", False) else frame
-
-# if we are viewing a video and we did not grab a frame,
-# then we have reached the end of the video
-#	if frame is None:
-#		break
 while True:
     # wait for debugging
-    cv2.waitKey(200)
+    cv2.waitKey(10)
 
     # grab the current frame
     frame = vs.read()
@@ -116,9 +100,14 @@ while True:
     # if we are viewing a video and we did not grab a frame,
     # then we have reached the end of the video
     if frame is None:
+        print("no frame")
         break
-
-    frame = frame[350:-100, :]
+    
+    # cropping needed for video files as they are too big
+    if args.get("video", False):
+        print("cropping image")
+        frame = frame[350:-100, :]
+    
     # resize the frame, blur it, and convert it to the HSV
     # color space
     frame = imutils.resize(frame, width=640, height=360)  
@@ -304,6 +293,8 @@ while True:
     
     out1.write(frame)
     cv2.imshow("Frame", frame)
+    # Comment out if HSV needs to be found
+    # cv2.imshow("Frame", mask)
     key = cv2.waitKey(1) & 0xFF
 
     # if the 'q' key is pressed, stop the loop
