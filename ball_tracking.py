@@ -11,14 +11,20 @@ import cvzone
 from cvzone.ColorModule import ColorFinder
 import math
 from decimal import *
+import requests
+
+
 
 x1=200
 x2=400
 y1=10
-y2=300
+y2=450
 
 golfballradius = 21.33; # in mm
 
+actualFPS = 0
+
+videoStartTime = time.time()
 
 # initialize variables to store the start and end positions of the ball
 startCircle = (0, 0, 0)
@@ -26,7 +32,6 @@ endCircle = (0, 0, 0)
 startPos = (0,0)
 endPos = (0,0)
 startTime = time.time()
-endTime = time.time()
 pixelmmratio = 0
 
 # initialize variable to store start candidates of balls
@@ -41,8 +46,6 @@ coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
 
 speed = 0
 
-dtFIL = 0
-
 tim1 = 0
 tim2 = 0
 
@@ -52,6 +55,8 @@ out1 = cv2.VideoWriter('Ball-New.mp4',0x00000021, 60.0, (640, 360))
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video",
                 help="path to the (optional) video file")
+ap.add_argument("-i", "--img",
+                help="path to the (optional) image file")
 ap.add_argument("-b", "--buffer", type=int, default=64,
                 help="max buffer size")
 args = vars(ap.parse_args())
@@ -64,11 +69,15 @@ args = vars(ap.parse_args())
 # lower_white = np.array([52,0,211])
 # upper_white = np.array([105,255,255])
 
+# Sim Room with limited lights
+hsvVals = {'hmin': 163, 'smin': 188, 'vmin': 165, 'hmax': 179, 'smax': 215, 'vmax': 255}
+# Indoors With outside Light
+# hsvVals = {'hmin': 164, 'smin': 0, 'vmin': 0, 'hmax': 179, 'smax': 255, 'vmax': 255}
+# Indoors With Overhead Lights
+# hsvVals = {'hmin': 0, 'smin': 191, 'vmin': 69, 'hmax': 23, 'smax': 255, 'vmax': 255}
+
 # Create the color Finder object set to True if you need to Find the color
 myColorFinder = ColorFinder(False)
-#hsvVals = {'hmin': 0, 'smin': 185, 'vmin': 0, 'hmax': 40, 'smax': 255, 'vmax': 255}
-#hsvVals = {'hmin': 52, 'smin': 0, 'vmin': 211, 'hmax': 105, 'smax': 255, 'vmax': 255}
-hsvVals = {'hmin': 164, 'smin': 0, 'vmin': 0, 'hmax': 179, 'smax': 255, 'vmax': 255}
 
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
@@ -86,28 +95,35 @@ else:
 time.sleep(2.0)
 
 while True:
-    # wait for debugging
-    # cv2.waitKey(10)
-
-    # grab the current frame
-    frame = vs.read()
-
+    
+    
     # set the frameTime
     frameTime = time.time()
+    actualFPS = actualFPS + 1
+    videoTimeDiff = frameTime - videoStartTime
+    fps = actualFPS / videoTimeDiff
 
-    # handle the frame from VideoCapture or VideoStream
-    frame = frame[1] if args.get("video", False) else frame
+    if args.get("img", False):
+        frame = cv2.imread(args["img"])
+    else:
+        # grab the current frame
+        frame = vs.read()
 
-    # if we are viewing a video and we did not grab a frame,
-    # then we have reached the end of the video
-    if frame is None:
-        print("no frame")
-        break
+        # handle the frame from VideoCapture or VideoStream
+        frame = frame[1] if args.get("video", False) else frame
+
+        # if we are viewing a video and we did not grab a frame,
+        # then we have reached the end of the video
+        if frame is None:
+            print("no frame")
+            break
     
     # cropping needed for video files as they are too big
-    if args.get("video", False):
-        print("cropping image")
-        frame = frame[350:-100, :]
+    if args.get("video", False):   
+        # wait for debugging
+        cv2.waitKey(1000)
+        # print("cropping image")
+        # frame = frame[350:-100, :]
     
     # resize the frame, blur it, and convert it to the HSV
     # color space
@@ -120,6 +136,7 @@ while True:
     # blobs left in the mask
     
     # Find the Color Ball
+    
     imgColor, mask = myColorFinder.update(hsv, hsvVals)
 
     # Mask now comes from ColorFinder
@@ -146,8 +163,8 @@ while True:
     # only proceed if at least one contour was found
     if len(cnts) > 0:
         
-        for index in range(len(cnts)):
-            cv2.drawContours(frame, cnts, index, (60, 255, 255), 1)
+        # for index in range(len(cnts)):
+        #     cv2.drawContours(frame, cnts, index, (60, 255, 255), 1)
 
         # find the largest contour in the mask, then use
         # it to compute the minimum enclosing circle and
@@ -177,7 +194,7 @@ while True:
             cv2.putText(frame,"y:"+str(tempy),(20,140),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
             cv2.putText(frame,"radius:"+str(tempz),(20,160),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
             circle = (tempx,tempy,tempz)
-            if tempz >=1 and tempz <= 50:
+            if tempz >=20 and tempz <= 50:
                 # check if the circle is stable to detect if a new start is there
                 newCenter = (tempx,tempy)
                 if not startPos or startPos[0]+10 <= newCenter[0] or startPos[0]-10 >= newCenter[0]:
@@ -205,7 +222,7 @@ while True:
                             filteredcircles.append(circle)
                             startCircle = circle
                             startPos = newCenter
-                            startTime = time.time()
+                            startTime = frameTime
                             print("Start Position: "+ str(startPos[0]) +":" + str(startPos[1]))
                             # Calculate the pixel per mm ratio according to z value of circle and standard radius of 2133 mm
                             pixelmmratio = circle[2] / golfballradius
@@ -272,11 +289,42 @@ while True:
 
     timeSinceEntered = (frameTime - tim2)
 
-    if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds):
+    # Send Shot Data
+    if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds and speed > 0.1):
         print("----- Shot Complete --------")
         print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
         print("Distance travelled in MM: "+str(distanceTraveledMM))
         print("Speed: "+str(speed)+" MPH")
+
+        #     ballSpeed: ballData.BallSpeed,
+        #     totalSpin: ballData.TotalSpin,
+        totalSpin = 0
+        #     hla: ballData.LaunchDirection,
+        launchDirection = 0
+                
+        # Sample array
+        array = [1,2,3,4,5,6,7,8,9,10]
+
+        # Data that we will send in post request.
+        data = {"ballData":{"BallSpeed":speed,"TotalSpin":totalSpin,"LaunchDirection":launchDirection}}
+
+        # The POST request to our node server
+        try:
+            res = requests.post('http://127.0.0.1:8888/putting', json=data)
+            res.raise_for_status()
+            # Convert response data to json
+            returned_data = res.json()
+
+            print(returned_data)
+            result = returned_data['result']
+            print("Response from Node.js:", result)
+
+        except requests.exceptions.HTTPError as e:  # This is the correct syntax
+            print(e)
+        except requests.exceptions.RequestException as e:  # This is the correct syntax
+            print(e)
+        
+
         print("----- Data reset --------")
         started = False
         entered = False
@@ -286,6 +334,11 @@ while True:
         tim2 = 0
         distanceTraveledMM = 0
         timeElapsedSeconds = 0
+        startCircle = (0, 0, 0)
+        endCircle = (0, 0, 0)
+        startPos = (0,0)
+        endPos = (0,0)
+        startTime = time.time()
         pixelmmratio = 0
         pts.clear
         tims.clear
@@ -293,11 +346,12 @@ while True:
         # Further clearing - startPos, endPos
     
     cv2.putText(frame,"entered:"+str(entered),(20,180),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"FPS:"+str(fps),(20,200),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     
     out1.write(frame)
     cv2.imshow("Frame", frame)
     # Comment out if HSV needs to be found
-    # cv2.imshow("Frame", mask)
+    cv2.imshow("MaskFrame", mask)
     key = cv2.waitKey(1) & 0xFF
 
     # if the 'q' key is pressed, stop the loop
