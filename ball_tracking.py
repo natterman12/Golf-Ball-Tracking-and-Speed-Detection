@@ -13,10 +13,10 @@ import math
 from decimal import *
 import requests
 
-x1=200
-x2=400
+x1=250
+x2=350
 y1=80
-y2=370
+y2=350
 
 golfballradius = 21.33; # in mm
 
@@ -56,7 +56,9 @@ ap.add_argument("-v", "--video",
 ap.add_argument("-i", "--img",
                 help="path to the (optional) image file")
 ap.add_argument("-b", "--buffer", type=int, default=64,
-                help="max buffer size")
+                help="max buffer size - default is 64")
+ap.add_argument("-c", "--camera", type=int, default=0,
+                help="webcam index number - default is 0")
 args = vars(ap.parse_args())
 
 # define the lower and upper boundaries of the "white"
@@ -89,10 +91,16 @@ myColorFinder = ColorFinder(False)
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
 
+webcamindex = 0
+
+# if a webcam index is supplied, grab the reference
+if args.get("camera", False):
+    webcamindex = args["camera"]
+
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-    vs = VideoStream(0).start()
+    vs = VideoStream(webcamindex).start()
 
 # otherwise, grab a reference to the video file
 else:
@@ -201,15 +209,13 @@ while True:
                     
                 else:
                     if not started:
-                        # find the largest contour in the mask, then use
-                        # it to compute the minimum enclosing circle and
-                        # centroid
-                        c = max(cnts, key=cv2.contourArea)
-                        ((x, y), radius) = cv2.minEnclosingCircle(c)
-                        M = cv2.moments(c)
-                        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+                        x = int(tempcenterx)
+                        y = int(tempcentery)
+                        radius = int(tempradius)
+                        center= (x,y)
                         #print("No Startpoint Set Yet: "+str(center)+" "+str(startCircle[2]+rangefactor)+" > "+str(radius)+" AND "+str(startCircle[2]-rangefactor)+" < "+str(radius))
-
+            else:
+                break
             
             
             #print(cnts)
@@ -219,30 +225,22 @@ while True:
             if radius >=5 and radius <= 100:
                 # radius = 30
                 # draw the circle and centroid on the frame,
-                # then update the list of tracked points
-                cv2.circle(frame, (int(x), int(y)), int(radius),
-                        (0, 0, 255), 2)
-                cv2.circle(frame, center, 5, (0, 0, 255), -1)            
-                temp = (x,y,radius)
-                tempx = int(temp[0])
-                tempy = int(temp[1])
-                tempz = int(temp[2])
-                circle = (tempx,tempy,tempz)
+                # then update the list of tracked points  
+                circle = (x,y,radius)
                 if circle:
                     # check if the circle is stable to detect if a new start is there
-                    newCenter = (tempx,tempy)
-                    if not startPos or startPos[0]+10 <= newCenter[0] or startPos[0]-10 >= newCenter[0]:
-                        startCandidates.append(newCenter)
-                        if len(startCandidates) >100 :
+                    if not startPos or startPos[0]+10 <= center[0] or startPos[0]-10 >= center[0]:
+                        startCandidates.append(center)
+                        if len(startCandidates) >30 :
                             startCandidates.pop(0)
-                            #filtered = startCandidates.filter(newCenter.x == value.x and newCenter.y == value.y)
+                            #filtered = startCandidates.filter(center.x == value.x and center.y == value.y)
                             arr = np.array(startCandidates)
                             # Create an empty list
                             filter_arr = []
                             # go through each element in arr
                             for element in arr:
                             # if the element is completely divisble by 2, set the value to True, otherwise False
-                                if (element[0] == newCenter[0] and newCenter[1] == element[1]):
+                                if (element[0] == center[0] and center[1] == element[1]):
                                     filter_arr.append(True)
                                 else:
                                     filter_arr.append(False)
@@ -250,14 +248,14 @@ while True:
                             filtered = arr[filter_arr]
 
                             #print(filtered)
-                            if len(filtered) >= 50:
-                                #print("New Start Found")
+                            if len(filtered) >= 10:
+                                #print("New Start Found")  
                                 pts.clear()
                                 tims.clear()
                                 filteredcircles = []
                                 filteredcircles.append(circle)
                                 startCircle = circle
-                                startPos = newCenter
+                                startPos = center
                                 startTime = frameTime
                                 #print("Start Position: "+ str(startPos[0]) +":" + str(startPos[1]))
                                 # Calculate the pixel per mm ratio according to z value of circle and standard radius of 2133 mm
@@ -274,7 +272,7 @@ while True:
                                 if (x >= coord[0][0] and entered == False and started == True):
                                     cv2.line(frame, (coord[0][0], coord[0][1]), (coord[2][0], coord[2][1]), (0, 255, 0),2)  # Changes line color to green
                                     tim1 = frameTime
-                                    print("Ball Entered. Position: "+str(center)) 
+                                    print("Ball Entered. Position: "+str(center))
                                     startPos = center
                                     entered = True
                                     # update the points and tims queues
@@ -283,37 +281,66 @@ while True:
                                 else:
 
                                     if ( x > coord[1][0] and entered == True and started == True):
-                                        cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 255, 0),2)  # Changes line color to green
-                                        tim2 = frameTime # Final time
-                                        print("Ball Left. Position: "+str(center)) 
-                                        endPos = center
-                                        # calculate the distance traveled by the ball in pixel
-                                        a = endPos[0] - startPos[0]
-                                        b = endPos[1] - startPos[1]
-                                        distanceTraveled = math.sqrt( a*a + b*b )
-                                        if not pixelmmratio is None:
-                                            # convert the distance traveled to mm using the pixel ratio
-                                            distanceTraveledMM = distanceTraveled / pixelmmratio
-                                            # take the time diff from ball entered to this frame
-                                            timeElapsedSeconds = (tim2 - tim1)
-                                            # calculate the speed in MPH
-                                            if not timeElapsedSeconds  == 0:
-                                                speed = ((distanceTraveledMM / 1000 / 1000) / (timeElapsedSeconds)) * 60 * 60 * 0.621371
-                                            # debug out
-                                            print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
-                                            print("Distance travelled in MM: "+str(distanceTraveledMM))
-                                            print("Speed: "+str(speed)+" MPH")
-                                            # update the points and tims queues
-                                            pts.appendleft(center)
-                                            tims.appendleft(frameTime)
+                                        #calculate hla for circle and pts[0]
+                                        previousHLA = (GetAngle((startCircle[0],startCircle[1]),pts[0])*-1)
+                                        #calculate hla for circle and now
+                                        currentHLA = (GetAngle((startCircle[0],startCircle[1]),center)*-1)
+                                        #check if HLA is inverted
+                                        similarHLA = False
+                                        if ((previousHLA <= 0 and currentHLA <=0) or (previousHLA >= 0 and currentHLA >=0)):
+                                            if (pow(currentHLA, 2) - pow(previousHLA, 2)) < 20:
+                                                similarHLA = True
+                                        else:
+                                            similarHLA = False
+                                        if ( x > pts[0][0] and (pow((y - (pts[0][1])), 2)) <= pow((y - (pts[1][1])), 2) and similarHLA == True):
+                                            cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 255, 0),2)  # Changes line color to green
+                                            tim2 = frameTime # Final time
+                                            print("Ball Left. Position: "+str(center))
+                                            endPos = center
+                                            # calculate the distance traveled by the ball in pixel
+                                            a = endPos[0] - startPos[0]
+                                            b = endPos[1] - startPos[1]
+                                            distanceTraveled = math.sqrt( a*a + b*b )
+                                            if not pixelmmratio is None:
+                                                # convert the distance traveled to mm using the pixel ratio
+                                                distanceTraveledMM = distanceTraveled / pixelmmratio
+                                                # take the time diff from ball entered to this frame
+                                                timeElapsedSeconds = (tim2 - tim1)
+                                                # calculate the speed in MPH
+                                                if not timeElapsedSeconds  == 0:
+                                                    speed = ((distanceTraveledMM / 1000 / 1000) / (timeElapsedSeconds)) * 60 * 60 * 0.621371
+                                                # debug out
+                                                print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
+                                                print("Distance travelled in MM: "+str(distanceTraveledMM))
+                                                print("Speed: "+str(speed)+" MPH")
+                                                # update the points and tims queues
+                                                pts.appendleft(center)
+                                                tims.appendleft(frameTime)
+                                        else:
+                                            print("False Exit after the Ball")
                                         
 
     cv2.putText(frame,"x:"+str(startCircle[0]),(20,120),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"y:"+str(startCircle[1]),(20,140),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"radius:"+str(startCircle[2]),(20,160),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))                                    
+    cv2.putText(frame,"radius:"+str(startCircle[2]),(20,160),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+
+    # Mark Start Circle
+    cv2.circle(frame, (startCircle[0],startCircle[1]), startCircle[2],(0, 0, 255), 2)
+    cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1) 
+
+    # Mark Entered Circle
+    cv2.circle(frame, (startPos), startCircle[2],(0, 0, 255), 2)
+    cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
+
+    # Mark Exit Circle
+    cv2.circle(frame, (endPos), startCircle[2],(0, 0, 255), 2)
+    cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
+
+
 
     # loop over the set of tracked points
     for i in range(1, len(pts)):
+        
         # if either of the tracked points are None, ignore
         # them
         if pts[i - 1] is None or pts[i] is None:
