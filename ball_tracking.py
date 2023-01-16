@@ -87,7 +87,7 @@ if args.get("ballcolor", False):
         case "darkorange":
             hsvVals = {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255}# dark
         case "green":
-            hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}
+            hsvVals = {'hmin': 200, 'smin': 200, 'vmin': 200, 'hmax': 255, 'smax': 255, 'vmax': 255}# light
         case "darkgreen":
             hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}# dark              
         case "red":
@@ -96,25 +96,6 @@ if args.get("ballcolor", False):
             hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
 
     
-
-# HSV for yellow
-# hsvVals = {'hmin': 2, 'smin': 207, 'vmin': 102, 'hmax': 54, 'smax': 240, 'vmax': 254}
-
-# HSV for yellow and white
-# hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
-
-# HSV for orange
-# hsvVals = {'hmin': 37, 'smin': 200, 'vmin': 126, 'hmax': 60, 'smax': 238, 'vmax': 255} # more visible at speed but not at still
-# hsvVals = {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255} # more visible at still
-
-# HSV for red
-# hsvVals = {'hmin': 0, 'smin': 46, 'vmin': 100, 'hmax': 44, 'smax': 255, 'vmax': 255} # red is less visible at speed
-
-# HSV for green
-# hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 50, 'hmax': 49, 'smax': 200, 'vmax': 255} # less visible at speed
-# hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255} # more visible at speed
-
-
 # Create the color Finder object set to True if you need to Find the color
 
 if args.get("img", False):
