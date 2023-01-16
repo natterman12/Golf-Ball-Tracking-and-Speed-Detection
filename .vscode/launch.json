@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-v putting5.mp4"]
+            "args": ["-c=orange","-v=putting7-orange.mov"]
         }
     ]
 }

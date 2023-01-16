@@ -13,10 +13,10 @@ import math
 from decimal import *
 import requests
 
-x1=250
-x2=350
-y1=80
-y2=350
+x1=200
+x2=300
+y1=180
+y2=450
 
 golfballradius = 21.33; # in mm
 
@@ -38,6 +38,7 @@ startCandidates = []
 # Initialize Entered indicator
 entered = False
 started = False
+left = False
 
 #coord of polygon in frame::: [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
 coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
@@ -57,8 +58,10 @@ ap.add_argument("-i", "--img",
                 help="path to the (optional) image file")
 ap.add_argument("-b", "--buffer", type=int, default=64,
                 help="max buffer size - default is 64")
-ap.add_argument("-c", "--camera", type=int, default=0,
+ap.add_argument("-w", "--camera", type=int, default=0,
                 help="webcam index number - default is 0")
+ap.add_argument("-c", "--ballcolor",
+                help="ball color - default is white")
 args = vars(ap.parse_args())
 
 # define the lower and upper boundaries of the "white"
@@ -70,23 +73,52 @@ args = vars(ap.parse_args())
 # upper_white = np.array([105,255,255])
 
 # for Colorpicker
-# HSV for White - Issue with putter same color hsv on face
-# Sim Room with limited lights
-# hsvVals = {'hmin': 163, 'smin': 188, 'vmin': 165, 'hmax': 179, 'smax': 215, 'vmax': 255}
-# Indoors With outside Light
-# hsvVals = {'hmin': 164, 'smin': 0, 'vmin': 0, 'hmax': 179, 'smax': 255, 'vmax': 255}
-# Indoors With Overhead Lights
-# hsvVals = {'hmin': 0, 'smin': 191, 'vmin': 69, 'hmax': 23, 'smax': 255, 'vmax': 255}
+# default white option
+hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
+
+if args.get("ballcolor", False):
+    match args["ballcolor"]:
+        case "white":
+            hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
+        case "yellow":
+            hsvVals = {'hmin': 0, 'smin': 188, 'vmin': 0, 'hmax': 15, 'smax': 255, 'vmax': 255} #{'hmin': 2, 'smin': 207, 'vmin': 102, 'hmax': 54, 'smax': 240, 'vmax': 254}
+        case "orange":
+            hsvVals = {'hmin': 19, 'smin': 237, 'vmin': 168, 'hmax': 49, 'smax': 255, 'vmax': 255}# light # {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255}# dark
+        case "green":
+            hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}         
+        case "red":
+            hsvVals = {'hmin': 0, 'smin': 46, 'vmin': 100, 'hmax': 44, 'smax': 255, 'vmax': 255}
+        case _:
+            hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
+
+    
 
 # HSV for yellow
 # hsvVals = {'hmin': 2, 'smin': 207, 'vmin': 102, 'hmax': 54, 'smax': 240, 'vmax': 254}
 
 # HSV for yellow and white
-hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
+# hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
+
+# HSV for orange
+# hsvVals = {'hmin': 37, 'smin': 200, 'vmin': 126, 'hmax': 60, 'smax': 238, 'vmax': 255} # more visible at speed but not at still
+# hsvVals = {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255} # more visible at still
+
+# HSV for red
+# hsvVals = {'hmin': 0, 'smin': 46, 'vmin': 100, 'hmax': 44, 'smax': 255, 'vmax': 255} # red is less visible at speed
+
+# HSV for green
+# hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 50, 'hmax': 49, 'smax': 200, 'vmax': 255} # less visible at speed
+# hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255} # more visible at speed
+
 
 # Create the color Finder object set to True if you need to Find the color
 
-myColorFinder = ColorFinder(False)
+if args.get("img", False):
+    myColorFinder = ColorFinder(True)
+else:
+    myColorFinder = ColorFinder(False)
+
+#myColorFinder = ColorFinder(True)
 
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
@@ -145,7 +177,7 @@ while True:
     # cropping needed for video files as they are too big
     if args.get("video", False):   
         # wait for debugging
-        cv2.waitKey(1)
+        cv2.waitKey(10)
         # print("cropping image")
         # frame = frame[350:-100, :]
     
@@ -222,7 +254,7 @@ while True:
             
 
             # only proceed if the radius meets a minimum size
-            if radius >=5 and radius <= 100:
+            if radius >=10 and radius <= 70:
                 # radius = 30
                 # draw the circle and centroid on the frame,
                 # then update the list of tracked points  
@@ -231,7 +263,7 @@ while True:
                     # check if the circle is stable to detect if a new start is there
                     if not startPos or startPos[0]+10 <= center[0] or startPos[0]-10 >= center[0]:
                         startCandidates.append(center)
-                        if len(startCandidates) >30 :
+                        if len(startCandidates) >50 :
                             startCandidates.pop(0)
                             #filtered = startCandidates.filter(center.x == value.x and center.y == value.y)
                             arr = np.array(startCandidates)
@@ -248,8 +280,8 @@ while True:
                             filtered = arr[filter_arr]
 
                             #print(filtered)
-                            if len(filtered) >= 10:
-                                #print("New Start Found")  
+                            if len(filtered) >= 15:
+                                print("New Start Found")  
                                 pts.clear()
                                 tims.clear()
                                 filteredcircles = []
@@ -263,6 +295,7 @@ while True:
                                 #print("Pixel ratio to mm: " +str(pixelmmratio))    
                                 started = True            
                                 entered = False
+                                left = False
                                 # update the points and tims queues
                                 pts.appendleft(center)
                                 tims.appendleft(frameTime)
@@ -287,15 +320,20 @@ while True:
                                         currentHLA = (GetAngle((startCircle[0],startCircle[1]),center)*-1)
                                         #check if HLA is inverted
                                         similarHLA = False
-                                        if ((previousHLA <= 0 and currentHLA <=0) or (previousHLA >= 0 and currentHLA >=0)):
-                                            if (pow(currentHLA, 2) - pow(previousHLA, 2)) < 20:
-                                                similarHLA = True
+                                        if left == True:
+                                            if ((previousHLA <= 0 and currentHLA <=0) or (previousHLA >= 0 and currentHLA >=0)):
+                                                hldDiff = (pow(currentHLA, 2) - pow(previousHLA, 2))
+                                                if  hldDiff < 30:
+                                                    similarHLA = True
+                                            else:
+                                                similarHLA = False
                                         else:
-                                            similarHLA = False
+                                            similarHLA = True
                                         if ( x > pts[0][0] and (pow((y - (pts[0][1])), 2)) <= pow((y - (pts[1][1])), 2) and similarHLA == True):
                                             cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 255, 0),2)  # Changes line color to green
                                             tim2 = frameTime # Final time
                                             print("Ball Left. Position: "+str(center))
+                                            left = True
                                             endPos = center
                                             # calculate the distance traveled by the ball in pixel
                                             a = endPos[0] - startPos[0]
@@ -352,64 +390,67 @@ while True:
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
         # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
 
-    timeSinceEntered = (frameTime - tim2)
+    timeSinceEntered = (frameTime - tim1)
 
-    # Send Shot Data
-    if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.5 and speed <= 20):
-        print("----- Shot Complete --------")
-        print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
-        print("Distance travelled in MM: "+str(distanceTraveledMM))
-        print("Speed: "+str(speed)+" MPH")
+    if left == True:
 
-        #     ballSpeed: ballData.BallSpeed,
-        #     totalSpin: ballData.TotalSpin,
-        totalSpin = 0
-        #     hla: ballData.LaunchDirection,
-        launchDirection = (GetAngle((startCircle[0],startCircle[1]),endPos)*-1)
-        print("HLA: Line"+str((startCircle[0],startCircle[1]))+" Angle "+str(launchDirection))
-        #Decimal(launchDirection);
-        if (launchDirection > -40 and launchDirection < 40):
-                
-            # Data that we will send in post request.
-            data = {"ballData":{"BallSpeed":"%.2f" % speed,"TotalSpin":totalSpin,"LaunchDirection":"%.2f" % launchDirection}}
+        # Send Shot Data
+        if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.1 and speed <= 20):
+            print("----- Shot Complete --------")
+            print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
+            print("Distance travelled in MM: "+str(distanceTraveledMM))
+            print("Speed: "+str(speed)+" MPH")
 
-            # The POST request to our node server
-            try:
-                res = requests.post('http://127.0.0.1:8888/putting', json=data)
-                res.raise_for_status()
-                # Convert response data to json
-                returned_data = res.json()
+            #     ballSpeed: ballData.BallSpeed,
+            #     totalSpin: ballData.TotalSpin,
+            totalSpin = 0
+            #     hla: ballData.LaunchDirection,
+            launchDirection = (GetAngle((startCircle[0],startCircle[1]),endPos)*-1)
+            print("HLA: Line"+str((startCircle[0],startCircle[1]))+" Angle "+str(launchDirection))
+            #Decimal(launchDirection);
+            if (launchDirection > -40 and launchDirection < 40):
+                    
+                # Data that we will send in post request.
+                data = {"ballData":{"BallSpeed":"%.2f" % speed,"TotalSpin":totalSpin,"LaunchDirection":"%.2f" % launchDirection}}
 
-                print(returned_data)
-                result = returned_data['result']
-                print("Response from Node.js:", result)
+                # The POST request to our node server
+                try:
+                    res = requests.post('http://127.0.0.1:8888/putting', json=data)
+                    res.raise_for_status()
+                    # Convert response data to json
+                    returned_data = res.json()
 
-            except requests.exceptions.HTTPError as e:  # This is the correct syntax
-                print(e)
-            except requests.exceptions.RequestException as e:  # This is the correct syntax
-                print(e)
-        else:
-            print("Misread on HLA - Shot not send!!!")    
+                    print(returned_data)
+                    result = returned_data['result']
+                    print("Response from Node.js:", result)
 
-        print("----- Data reset --------")
-        started = False
-        entered = False
-        speed = 0
-        timeSinceEntered = 0
-        tim1 = 0
-        tim2 = 0
-        distanceTraveledMM = 0
-        timeElapsedSeconds = 0
-        startCircle = (0, 0, 0)
-        endCircle = (0, 0, 0)
-        startPos = (0,0)
-        endPos = (0,0)
-        startTime = time.time()
-        pixelmmratio = 0
-        pts.clear()
-        tims.clear()
+                except requests.exceptions.HTTPError as e:  # This is the correct syntax
+                    print(e)
+                except requests.exceptions.RequestException as e:  # This is the correct syntax
+                    print(e)
+            else:
+                print("Misread on HLA - Shot not send!!!")    
 
-        # Further clearing - startPos, endPos
+            print("----- Data reset --------")
+            started = False
+            entered = False
+            left = False
+            speed = 0
+            timeSinceEntered = 0
+            tim1 = 0
+            tim2 = 0
+            distanceTraveledMM = 0
+            timeElapsedSeconds = 0
+            startCircle = (0, 0, 0)
+            endCircle = (0, 0, 0)
+            startPos = (0,0)
+            endPos = (0,0)
+            startTime = time.time()
+            pixelmmratio = 0
+            pts.clear()
+            tims.clear()
+
+            # Further clearing - startPos, endPos
     
     cv2.putText(frame,"entered:"+str(entered),(20,180),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"FPS:"+str(fps),(20,200),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
