@@ -15,7 +15,7 @@ import requests
 
 x1=200
 x2=300
-y1=180
+y1=80
 y2=450
 
 golfballradius = 21.33; # in mm
@@ -83,7 +83,9 @@ if args.get("ballcolor", False):
         case "yellow":
             hsvVals = {'hmin': 0, 'smin': 188, 'vmin': 0, 'hmax': 15, 'smax': 255, 'vmax': 255} #{'hmin': 2, 'smin': 207, 'vmin': 102, 'hmax': 54, 'smax': 240, 'vmax': 254}
         case "orange":
-            hsvVals = {'hmin': 19, 'smin': 237, 'vmin': 168, 'hmax': 49, 'smax': 255, 'vmax': 255}# light # {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255}# dark
+            hsvVals = {'hmin': 19, 'smin': 237, 'vmin': 168, 'hmax': 49, 'smax': 255, 'vmax': 255}# light
+        case "darkorange":
+            hsvVals = {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255}# dark
         case "green":
             hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}         
         case "red":
