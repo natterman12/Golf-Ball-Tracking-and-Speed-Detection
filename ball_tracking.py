@@ -87,7 +87,9 @@ if args.get("ballcolor", False):
         case "darkorange":
             hsvVals = {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255}# dark
         case "green":
-            hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}         
+            hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}
+        case "darkgreen":
+            hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}# dark              
         case "red":
             hsvVals = {'hmin': 0, 'smin': 46, 'vmin': 100, 'hmax': 44, 'smax': 255, 'vmax': 255}
         case _:
@@ -256,7 +258,7 @@ while True:
             
 
             # only proceed if the radius meets a minimum size
-            if radius >=10 and radius <= 70:
+            if radius >=5:
                 # radius = 30
                 # draw the circle and centroid on the frame,
                 # then update the list of tracked points  
@@ -397,7 +399,7 @@ while True:
     if left == True:
 
         # Send Shot Data
-        if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.1 and speed <= 20):
+        if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.1 and speed <= 50):
             print("----- Shot Complete --------")
             print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
             print("Distance travelled in MM: "+str(distanceTraveledMM))
