@@ -13,9 +13,9 @@ import math
 from decimal import *
 import requests
 
-x1=200
-x2=300
-y1=80
+x1=150
+x2=200
+y1=180
 y2=450
 
 golfballradius = 21.33; # in mm
@@ -62,6 +62,8 @@ ap.add_argument("-w", "--camera", type=int, default=0,
                 help="webcam index number - default is 0")
 ap.add_argument("-c", "--ballcolor",
                 help="ball color - default is white")
+ap.add_argument("-d", "--debug",
+                help="debug - color finder and wait timer")
 args = vars(ap.parse_args())
 
 # define the lower and upper boundaries of the "white"
@@ -81,29 +83,30 @@ if args.get("ballcolor", False):
         case "white":
             hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
         case "yellow":
-            hsvVals = {'hmin': 0, 'smin': 188, 'vmin': 0, 'hmax': 15, 'smax': 255, 'vmax': 255} #{'hmin': 2, 'smin': 207, 'vmin': 102, 'hmax': 54, 'smax': 240, 'vmax': 254}
+            hsvVals = {'hmin': 0, 'smin': 188, 'vmin': 0, 'hmax': 15, 'smax': 255, 'vmax': 255} # {'hmin': 2, 'smin': 207, 'vmin': 102, 'hmax': 54, 'smax': 240, 'vmax': 254}
         case "orange":
-            hsvVals = {'hmin': 19, 'smin': 237, 'vmin': 168, 'hmax': 49, 'smax': 255, 'vmax': 255}# light
-        case "darkorange":
-            hsvVals = {'hmin': 0, 'smin': 200, 'vmin': 90, 'hmax': 60, 'smax': 255, 'vmax': 255}# dark
+            hsvVals = {'hmin': 7, 'smin': 180, 'vmin': 134, 'hmax': 20, 'smax': 255, 'vmax': 255}# sim room
+        case "lightorange":
+            hsvVals = {'hmin': 3, 'smin': 181, 'vmin': 134, 'hmax': 40, 'smax': 255, 'vmax': 255}# light
+        case "officeorange":
+            hsvVals = {'hmin': 0, 'smin': 175, 'vmin': 150, 'hmax': 20, 'smax': 255, 'vmax': 255}
         case "green":
-            hsvVals = {'hmin': 200, 'smin': 200, 'vmin': 200, 'hmax': 255, 'smax': 255, 'vmax': 255}# light
-        case "darkgreen":
-            hsvVals = {'hmin': 0, 'smin': 112, 'vmin': 150, 'hmax': 56, 'smax': 251, 'vmax': 255}# dark              
+            hsvVals = {'hmin': 29, 'smin': 86, 'vmin': 6, 'hmax': 64, 'smax': 255, 'vmax': 255} # office {'hmin': 112, 'smin': 229, 'vmin': 181, 'hmax': 177, 'smax': 255, 'vmax': 255}
+        case "lightgreen":
+            hsvVals = {'hmin': 0, 'smin': 236, 'vmin': 244, 'hmax': 179, 'smax': 255, 'vmax': 255}# light              
         case "red":
-            hsvVals = {'hmin': 0, 'smin': 46, 'vmin': 100, 'hmax': 44, 'smax': 255, 'vmax': 255}
+            hsvVals = {'hmin': 0, 'smin': 13, 'vmin': 207, 'hmax': 92, 'smax': 115, 'vmax': 255}# {'hmin': 0, 'smin': 46, 'vmin': 100, 'hmax': 44, 'smax': 255, 'vmax': 255}
         case _:
             hsvVals = {'hmin': 0, 'smin': 210, 'vmin': 143, 'hmax': 50, 'smax': 255, 'vmax': 255}
 
     
 # Create the color Finder object set to True if you need to Find the color
 
-if args.get("img", False):
+if args.get("debug", False):
     myColorFinder = ColorFinder(True)
+    myColorFinder.setTrackbarValues(hsvVals)
 else:
     myColorFinder = ColorFinder(False)
-
-#myColorFinder = ColorFinder(True)
 
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
@@ -158,13 +161,13 @@ while True:
         if frame is None:
             print("no frame")
             break
+
+    origframe = frame
     
     # cropping needed for video files as they are too big
-    if args.get("video", False):   
+    if args.get("debug", False):   
         # wait for debugging
-        cv2.waitKey(10)
-        # print("cropping image")
-        # frame = frame[350:-100, :]
+        cv2.waitKey(int(args["debug"]))
     
     # resize the frame, blur it, and convert it to the HSV
     # color space
@@ -182,12 +185,23 @@ while True:
 
     # Mask now comes from ColorFinder
     #mask = cv2.inRange(hsv, lower_white, upper_white)
-    mask = cv2.erode(mask, None, iterations=2)
-    mask = cv2.dilate(mask, None, iterations=2)
+    #mask = cv2.erode(mask, None, iterations=4)
+    #mask = cv2.dilate(mask, None, iterations=)
 
     # find contours in the mask and initialize the current
     # (x, y) center of the ball
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # testing with cirlces
+    grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # circles = cv2.HoughCircles(blurred,cv2.HOUGH_GRADIENT,1,10) 
+    # # loop over the (x, y) coordinates and radius of the circles
+    # if (circles and len(circles) >= 1):
+    #     for (x, y, r) in circles:
+    #         cv2.circle(frame, (x, y), r, (0, 255, 0), 4)
+    #         cv2.rectangle(frame, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+
+
     cnts = imutils.grab_contours(cnts)
     center = None
     
@@ -442,10 +456,12 @@ while True:
     
     out1.write(frame)
     cv2.imshow("Frame", frame)
-    # Comment out if HSV needs to be found
-    cv2.imshow("MaskFrame", mask)
+    
+    if args.get("debug", False):
+        cv2.imshow("MaskFrame", mask)
+        cv2.imshow("Original", origframe)
+    
     key = cv2.waitKey(1) & 0xFF
-
     # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
