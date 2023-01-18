@@ -12,9 +12,17 @@ Setup:
 
 You can install the necessary packages by running pip install with the requirements file - some mentioned packages might not be necessary to run it as I did not clean it up yet
 
+Install the app:
+
 "pip install -r requirements.txt"
 
-Run "python ball_tracking.py" to run the app
+Run the app:
+
+"python ball_tracking.py"
+
+Default color to be found is yellow - You can adapt this by running -c as color options green, orange or white which might give you more false reads
+
+"python ball_tracking.py -c orange"
 
 This is early development so happy about feedback but do not base your SGT career on it
 
