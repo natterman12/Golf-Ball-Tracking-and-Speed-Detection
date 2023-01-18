@@ -482,6 +482,9 @@ while True:
         cv2.putText(frame,"Last Shot",(300,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
         cv2.putText(frame,"Ball Speed: "+str(lastShotSpeed)+" MPH",(300,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
         cv2.putText(frame,"HLA: "+str(lastShotHLA)+" Degrees",(300,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    
+    if started:
+        cv2.line(frame,(sx2-sx1,startCircle[1]),(sx2-sx1+400,startCircle[1]),(255, 255, 255),4,cv2.LINE_AA)
     else:
         cv2.line(frame,(sx2-sx1,int(y1+((y2-y1)/2))),(sx2-sx1+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
     
