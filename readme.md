@@ -20,12 +20,19 @@ Run the app:
 
 "python ball_tracking.py"
 
-Default color to be found is yellow - You can adapt this by running -c as color options green, orange or white which might give you more false reads
+Adjust the white line to reflect a straight put and place your ball into the yellow rectangle. Once identified the ball should get a red circle fully around. If it is smaller than the ball it will not reflect the right putting speed. It must match the ball dimensions as best as it can. If the ball is not detected try adjusting the light situation.
+
+Default color to be found is yellow - You can adapt this by running -c as color options green, orange, red or white. White is a very general option if no color ball is availabe but might give you more false reads on other white objects
 
 "python ball_tracking.py -c orange"
+
+<img src="camera-putting-alignment.png">
 
 This is early development so happy about feedback but do not base your SGT career on it
 
 Here is a short video demonstration of the v0 1 prototype
 
 https://youtu.be/ZgcH25WkCWQ
+
+
+
