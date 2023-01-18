@@ -1,5 +1,5 @@
 """
-Color Module
+Color Module - original by cvzone - changed to set values
 Finds color in an image based on hsv values
 Can run as stand alone to find relevant hsv values
 
@@ -49,7 +49,9 @@ class ColorFinder:
 
         hsvVals = {"hmin": hmin, "smin": smin, "vmin": vmin,
                    "hmax": hmax, "smax": smax, "vmax": vmax}
+        
         print(hsvVals)
+        
         return hsvVals
 
     def setTrackbarValues(self, hsvValues):
@@ -66,7 +68,7 @@ class ColorFinder:
 
         hsvVals = {"hmin": hmin, "smin": smin, "vmin": vmin,
                    "hmax": hmax, "smax": smax, "vmax": vmax}
-        print(hsvVals)
+        
         return hsvVals
 
     def update(self, img, myColor=None):
