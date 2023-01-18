@@ -26,7 +26,7 @@ Default color to be found is yellow - You can adapt this by running -c as color 
 
 "python ball_tracking.py -c orange"
 
-<img src="camera-putting-alignment.png">
+<img src="Camera-Putting-Alignment.png">
 
 This is early development so happy about feedback but do not base your SGT career on it
 
