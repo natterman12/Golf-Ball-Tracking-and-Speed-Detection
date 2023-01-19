@@ -63,7 +63,6 @@ speed = 0
 tim1 = 0
 tim2 = 0
 
-out1 = cv2.VideoWriter('Ball-New.mp4',0x00000021, 60.0, (640, 360))
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -131,6 +130,7 @@ if not args.get("video", False):
 # otherwise, grab a reference to the video file
 else:
     vs = cv2.VideoCapture(args["video"])
+    out1 = cv2.VideoWriter('Ball-New.mp4',0x00000021, 60.0, (640, 360))
     
 
 def GetAngle (p1, p2):
@@ -488,8 +488,9 @@ while True:
     else:
         cv2.line(frame,(sx2-sx1,int(y1+((y2-y1)/2))),(sx2-sx1+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
     
-    out1.write(frame)
-    cv2.imshow("Frame", frame)
+    if args.get("video", False):
+        out1.write(frame)
+    cv2.imshow("Putting View: Press Q to exit / changing Ball Color", frame)
     
     if args.get("debug", False):
         cv2.imshow("MaskFrame", mask)
@@ -509,5 +510,6 @@ else:
 	vs.release()
 
 # close all windows
-out1.release()
+if out1:
+    out1.release()
 cv2.destroyAllWindows()
