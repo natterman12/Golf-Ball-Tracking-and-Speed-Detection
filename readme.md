@@ -30,9 +30,13 @@ Default color to be found is yellow - You can adapt this by running -c as color 
 
 "python ball_tracking.py -c orange"
 
-<img src="Camera-Putting-Alignment.png">
-
 This is early development so happy about feedback but do not base your SGT career on it
+
+Software is open source. Feel Free to buy me a coffee or a sleeve of golf balls if you like it.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U6U2I70HX)
+
+<img src="Camera-Putting-Alignment.png">
 
 Here is a short video demonstration of the prototype
 
