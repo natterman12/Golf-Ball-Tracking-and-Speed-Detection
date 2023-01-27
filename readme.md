@@ -14,6 +14,8 @@ Setup:
 
 You can download the beta release or just install the packages and run the app via python.
 
+Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w <webcamera number 0-3>]
+
 You can install the necessary packages by running pip install with the requirements file - some mentioned packages might not be necessary to run it as I did not clean it up yet
 
 Install the app:
@@ -24,7 +26,7 @@ Run the app:
 
 "python ball_tracking.py"
 
-Default color to be found is yellow - You can adapt this by running -c as color options green, orange, red or white. White is a very general option if no color ball is availabe but might give you more false reads on other white objects
+Default color to be found is yellow - You can adapt this by running -c as color options yellow, green, orange, red or white. White is a very general option if no color ball is availabe but might give you more false reads on other white objects. Best options for me are orange, yellow and red.
 
 "python ball_tracking.py -c orange"
 
