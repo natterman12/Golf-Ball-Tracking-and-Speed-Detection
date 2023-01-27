@@ -46,7 +46,7 @@ pixelmmratio = 0
 
 # initialize variable to store start candidates of balls
 startCandidates = []
-startminimum = 20
+startminimum = 10
 
 # Initialize Entered indicator
 entered = False
