@@ -307,11 +307,6 @@ while True:
     cnts = imutils.grab_contours(cnts)
     center = None
     
-    # cv2.putText(frame,"x1:"+str(x1),(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    # cv2.putText(frame,"y1:"+str(y1),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    # cv2.putText(frame,"x2:"+str(x2),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    # cv2.putText(frame,"y2:"+str(y2),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-
     # Startpoint Zone
 
     cv2.line(frame, (startcoord[0][0], startcoord[0][1]), (startcoord[1][0], startcoord[1][1]), (0, 210, 255), 2)  # First horizontal line
@@ -509,7 +504,7 @@ while True:
     if left == True:
 
         # Send Shot Data
-        if (tim2 and timeSinceEntered > 1 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.3 and speed <= 30):
+        if (tim2 and timeSinceEntered > 0.5 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.3 and speed <= 30):
             print("----- Shot Complete --------")
             print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
             print("Distance travelled in MM: "+str(distanceTraveledMM))
@@ -574,7 +569,28 @@ while True:
             tims.clear()
 
             # Further clearing - startPos, endPos
-    
+    else:
+        # Send Shot Data
+        if (tim1 and timeSinceEntered > 0.5):
+            print("----- Data reset --------")
+            started = False
+            entered = False
+            left = False
+            speed = 0
+            timeSinceEntered = 0
+            tim1 = 0
+            tim2 = 0
+            distanceTraveledMM = 0
+            timeElapsedSeconds = 0
+            startCircle = (0, 0, 0)
+            endCircle = (0, 0, 0)
+            startPos = (0,0)
+            endPos = (0,0)
+            startTime = time.time()
+            pixelmmratio = 0
+            pts.clear()
+            tims.clear()
+            
     #cv2.putText(frame,"entered:"+str(entered),(20,180),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     #cv2.putText(frame,"FPS:"+str(fps),(20,200),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 

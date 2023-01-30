@@ -11,8 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            //"args": ["-c=red2","-i=red.jpg","-d=50"]// "-v=Calibration-green4.mp4"  "-i=green2.jpg"
-            "args": ["-c=calibrate"]// "-v=Calibration-green4.mp4"  "-i=green2.jpg"
+            "args": ["-c=orange2","-v=putting9-orange2.mp4","-d=10"]// "-v=Calibration-green4.mp4"  "-i=green2.jpg"
+            //"args": ["-c=calibrate"]// "-v=Calibration-green4.mp4"  "-i=green2.jpg"
         }
     ]
 }
