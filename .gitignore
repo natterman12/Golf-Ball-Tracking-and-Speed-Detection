@@ -4,3 +4,4 @@
 *.mkv
 dist/
 readme-priv.md
+.vscode
