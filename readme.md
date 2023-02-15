@@ -37,18 +37,13 @@ There are also other options to for start to pass a video file or image file
 usage: ball_tracking.py [-h] [-v VIDEO] [-i IMG] [-b BUFFER] [-w CAMERA] [-c BALLCOLOR] [-d DEBUG]
 
 options:
-  -h, --help            show this help message and exit
-  -v VIDEO, --video VIDEO
-                        path to the (optional) video file
-  -i IMG, --img IMG     path to the (optional) image file
-  -b BUFFER, --buffer BUFFER
-                        max buffer size - default is 64
-  -w CAMERA, --camera CAMERA
-                        webcam index number - default is 0
-  -c BALLCOLOR, --ballcolor BALLCOLOR
-                        ball color - default is white
-  -d DEBUG, --debug DEBUG
-                        debug - color finder and wait timer
+  -h, --help                  show this help message and exit
+  -v VIDEO, --video VIDEO     path to the (optional) video file
+  -i IMG, --img IMG           path to the (optional) image file
+  -b BUFFER, --buffer BUFFER  max buffer size - default is 64
+  -w CAMERA, --camera CAMERA  webcam index number - default is 0
+  -c BALLCOLOR, --ballcolor   ball color - default is white
+  -d DEBUG, --debug DEBUG     debug - color finder and wait timer
 
 This is early development so happy about feedback but do not base your SGT career on it
 
