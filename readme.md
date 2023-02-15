@@ -30,6 +30,26 @@ Default color to be found is yellow - You can adapt this by running -c as color 
 
 "python ball_tracking.py -c orange"
 
+In the app you can hit "a" for advanced settings to define the ball detection area or hit "d" to get a debug view of the video feed to see the color detection mask.
+
+There are also other options to for start to pass a video file or image file
+
+usage: ball_tracking.py [-h] [-v VIDEO] [-i IMG] [-b BUFFER] [-w CAMERA] [-c BALLCOLOR] [-d DEBUG]
+
+options:
+  -h, --help            show this help message and exit
+  -v VIDEO, --video VIDEO
+                        path to the (optional) video file
+  -i IMG, --img IMG     path to the (optional) image file
+  -b BUFFER, --buffer BUFFER
+                        max buffer size - default is 64
+  -w CAMERA, --camera CAMERA
+                        webcam index number - default is 0
+  -c BALLCOLOR, --ballcolor BALLCOLOR
+                        ball color - default is white
+  -d DEBUG, --debug DEBUG
+                        debug - color finder and wait timer
+
 This is early development so happy about feedback but do not base your SGT career on it
 
 Software is open source. Feel Free to buy me a coffee or a sleeve of golf balls if you like it.

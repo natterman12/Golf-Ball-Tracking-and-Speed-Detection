@@ -11,21 +11,48 @@ from ColorModuleExtended import ColorFinder
 import math
 from decimal import *
 import requests
+from configparser import ConfigParser
+
+parser = ConfigParser()
+CFG_FILE = 'config.ini'
+
+parser.read(CFG_FILE)
+
+print(parser.get('putting', 'startx1'))
 
 # Startpoint Zone
 
-sx1=10
-sx2=180
+ballradius = 0
 
-y1=180
-y2=450
 
-#coord of polygon in frame::: [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
-startcoord=[[sx1,y1],[sx2,y1],[sx1,y2],[sx2,y2]]
+if parser.has_option('putting', 'startx1'):
+    sx1=int(parser.get('putting', 'startx1'))
+else:
+    sx1=10
+if parser.has_option('putting', 'startx2'):
+    sx2=int(parser.get('putting', 'startx2'))
+else:
+    sx2=180
+if parser.has_option('putting', 'y1'):
+    y1=int(parser.get('putting', 'y1'))
+else:
+    y1=180
+if parser.has_option('putting', 'y2'):
+    y2=int(parser.get('putting', 'y2'))
+else:
+    y2=450
+if parser.has_option('putting', 'radius'):
+    ballradius=int(parser.get('putting', 'radius'))
+else:
+    ballradius=0
+
 
 # Detection Gateway
 x1=sx2+10
-x2=200
+x2=x1+10
+
+#coord of polygon in frame::: [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
+startcoord=[[sx1,y1],[sx2,y1],[sx1,y2],[sx2,y2]]
 
 #coord of polygon in frame::: [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
 coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
@@ -46,7 +73,7 @@ pixelmmratio = 0
 
 # initialize variable to store start candidates of balls
 startCandidates = []
-startminimum = 10
+startminimum = 30
 
 # Initialize Entered indicator
 entered = False
@@ -104,6 +131,8 @@ green2 = {'hmin': 0, 'smin': 109, 'vmin': 74, 'hmax': 81, 'smax': 193, 'vmax': 1
 orange = {'hmin': 0, 'smin': 219, 'vmin': 147, 'hmax': 19, 'smax': 255, 'vmax': 255}# light
 orange2 = {'hmin': 3, 'smin': 181, 'vmin': 134, 'hmax': 40, 'smax': 255, 'vmax': 255}# dark
 orange3 = {'hmin': 0, 'smin': 73, 'vmin': 150, 'hmax': 40, 'smax': 255, 'vmax': 255}# test
+orange4 = {'hmin': 3, 'smin': 181, 'vmin': 216, 'hmax': 40, 'smax': 255, 'vmax': 255}# ps3eye
+#orange4 = {'hmin': 0, 'smin': 0, 'vmin': 147, 'hmax': 81, 'smax': 159, 'vmax': 255} janl?
 
 calibrate = {}
 
@@ -127,6 +156,8 @@ if args.get("ballcolor", False):
             hsvVals = orange2
         case "orange3":
             hsvVals = orange3
+        case "orange4":
+            hsvVals = orange4
         case "green":
             hsvVals = green 
         case "green2":
@@ -138,7 +169,7 @@ if args.get("ballcolor", False):
         case _:
             hsvVals = yellow
 
-calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("green",green),("green2",green2),("red",red),("red2",red2)]
+calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
     
 # Create the color Finder object set to True if you need to Find the color
 
@@ -160,22 +191,131 @@ if args.get("camera", False):
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-    vs = cv2.VideoCapture(webcamindex) # VideoStream(webcamindex).start()
+    vs = cv2.VideoCapture(webcamindex)
+    #vs.set(cv2.CAP_PROP_FPS, 60) 
     # otherwise, grab a reference to the video file
 else:
     vs = cv2.VideoCapture(args["video"])
 
 # Get video metadata
-video_fps = vs.get(cv2.CAP_PROP_FPS),
+video_fps = vs.get(cv2.CAP_PROP_FPS)
 height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = vs.get(cv2.CAP_PROP_FRAME_WIDTH)
+saturation = vs.get(cv2.CAP_PROP_SATURATION)
+exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+
+if type(video_fps) == float:
+    if video_fps == 0.0:
+        new_fps = []
+        new_fps.append(60)
+
+    if video_fps > 0.0:
+        new_fps = []
+        new_fps.append(30)
+
+    if video_fps > 30.0:
+        new_fps = []
+        new_fps.append(60)
+    video_fps = new_fps
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 
-    
+
+
+def setFPS(value):
+    print(value)
+    vs.set(cv2.CAP_PROP_FPS,value)
+    pass 
+
+def setSaturation(value):
+    print(value)
+    vs.set(cv2.CAP_PROP_SATURATION,value)
+    pass
+
+def setExposure(value):
+    print(value)
+    #vs.set(cv2.CAP_PROP_EXPOSURE,value)
+    pass
+
+def setXStart(value):
+    print(value)
+    startcoord[0][0]=value
+    startcoord[2][0]=value
+
+    global sx1
+    sx1=int(value)    
+    parser.set('putting', 'startx1', str(sx1))
+    parser.write(open(CFG_FILE, "w"))
+    pass
+
+
+def setXEnd(value):
+    print(value)
+    startcoord[1][0]=value
+    startcoord[3][0]=value 
+
+    global x1
+    global x2
+    global sx2
+     
+    # Detection Gateway
+    x1=int(value+10)
+    x2=int(x1+10)
+
+    #coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
+    coord[0][0]=x1
+    coord[2][0]=x1
+    coord[1][0]=x2
+    coord[3][0]=x2
+
+    sx2=int(value)    
+    parser.set('putting', 'startx2', str(sx2))
+    parser.write(open(CFG_FILE, "w"))
+    pass  
+
+def setYStart(value):
+    print(value)
+    startcoord[0][1]=value
+    startcoord[1][1]=value
+
+    global y1
+
+    #coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
+    coord[0][1]=value   
+    coord[1][1]=value
+
+    y1=int(value)    
+    parser.set('putting', 'y1', str(y1))
+    parser.write(open(CFG_FILE, "w"))     
+    pass
+
+
+def setYEnd(value):
+    print(value)
+    startcoord[2][1]=value
+    startcoord[3][1]=value 
+
+    global y2
+
+    #coord=[[x1,y1],[x2,y1],[x1,y2],[x2,y2]]
+    coord[2][1]=value   
+    coord[3][1]=value
+
+    y2=int(value)    
+    parser.set('putting', 'y2', str(y2))
+    parser.write(open(CFG_FILE, "w"))     
+    pass 
+
+def setBallRadius(value):
+    print(value)    
+    global ballradius
+    ballradius = int(value)
+    parser.set('putting', 'radius', str(ballradius))
+    parser.write(open(CFG_FILE, "w"))
+    pass 
 
 def GetAngle (p1, p2):
     x1, y1 = p1
@@ -184,6 +324,26 @@ def GetAngle (p1, p2):
     dY = y2 - y1
     rads = math.atan2 (-dY, dX) #wrong for finding angle/declination?
     return math.degrees (rads)
+
+def rgb2yuv(rgb):
+    m = np.array([
+        [0.29900, -0.147108,  0.614777],
+        [0.58700, -0.288804, -0.514799],
+        [0.11400,  0.435912, -0.099978]
+    ])
+    yuv = np.dot(rgb, m)
+    yuv[:,:,1:] += 0.5
+    return yuv
+
+def yuv2rgb(yuv):
+    m = np.array([
+        [1.000,  1.000, 1.000],
+        [0.000, -0.394, 2.032],
+        [1.140, -0.581, 0.000],
+    ])
+    yuv[:, :, 1:] -= 0.5
+    rgb = np.dot(yuv, m)
+    return rgb
 
 # allow the camera or video file to warm up
 time.sleep(2.0)
@@ -220,6 +380,7 @@ while True:
                     if colorcount == len(calibrationcolor):
                         vs.release()
                         vs = cv2.VideoCapture(webcamindex)
+                        #vs.set(cv2.CAP_PROP_FPS, 60)
                         ret, frame = vs.read()
                         print("Calibration Finished:"+str(calColorObjectCount))
                         cv2.putText(frame,"Calibration Finished:",(150,100),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
@@ -266,7 +427,7 @@ while True:
             break
 
     origframe = frame
-    
+       
     # cropping needed for video files as they are too big
     if args.get("debug", False):   
         # wait for debugging
@@ -331,6 +492,9 @@ while True:
         center= (0,0)
         
         for index in range(len(cnts)):
+            circle = (0,0,0)
+            center= (0,0)
+            radius = 0
             # Eliminate countours that are outside the y dimensions of the detection zone
             ((tempcenterx, tempcentery), tempradius) = cv2.minEnclosingCircle(cnts[index])
             if (tempcentery >= y1 and tempcentery <= y2):
@@ -397,7 +561,10 @@ while True:
                                     startTime = frameTime
                                     #print("Start Position: "+ str(startPos[0]) +":" + str(startPos[1]))
                                     # Calculate the pixel per mm ratio according to z value of circle and standard radius of 2133 mm
-                                    pixelmmratio = circle[2] / golfballradius
+                                    if ballradius == 0:
+                                        pixelmmratio = circle[2] / golfballradius
+                                    else:
+                                        pixelmmratio = ballradius / golfballradius
                                     #print("Pixel ratio to mm: " +str(pixelmmratio))    
                                     started = True            
                                     entered = False
@@ -417,6 +584,7 @@ while True:
                                 # update the points and tims queues
                                 pts.appendleft(center)
                                 tims.appendleft(frameTime)
+                                break
                             else:
                                 if ( x > coord[1][0] and entered == True and started == True):
                                     #calculate hla for circle and pts[0]
@@ -459,13 +627,20 @@ while True:
                                             # update the points and tims queues
                                             pts.appendleft(center)
                                             tims.appendleft(frameTime)
+                                            break
                                     else:
                                         print("False Exit after the Ball")
                                     
     cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+
+    if ballradius == 0:
+        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
+
+    cv2.putText(frame,"FPS:"+str(video_fps[0]),(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
     # Mark Start Circle
     if started:
@@ -504,7 +679,7 @@ while True:
     if left == True:
 
         # Send Shot Data
-        if (tim2 and timeSinceEntered > 0.5 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.3 and speed <= 30):
+        if (tim2 and timeSinceEntered > 0.5 and distanceTraveledMM and timeElapsedSeconds and speed >= 0.5 and speed <= 25):
             print("----- Shot Complete --------")
             print("Time Elapsed in Sec: "+str(timeElapsedSeconds))
             print("Distance travelled in MM: "+str(distanceTraveledMM))
@@ -609,8 +784,11 @@ while True:
         out1.write(frame)
 
     if out2:
-        out2.write(origframe)
-    cv2.imshow("Putting View: Press Q to exit / changing Ball Color", frame)
+        try:
+            out2.write(origframe)
+        except Exception as e:
+            print(e)
+    cv2.imshow("Putting View: Press q to exit / a for adv. settings", frame)
     
     if args.get("debug", False):
         cv2.imshow("MaskFrame", mask)
@@ -620,6 +798,27 @@ while True:
     # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
+    if key == ord("a"):
+        cv2.namedWindow("Advanced Settings")
+        cv2.resizeWindow("Advanced Settings", 640, 240)
+        # cv2.createTrackbar("FPS", "Advanced Settings", int(video_fps[0]),int(video_fps[0]), setFPS)
+        # cv2.setTrackbarPos("FPS","Advanced Settings",int(video_fps[0]))
+        # cv2.createTrackbar("Saturation", "Advanced Settings", 0, 255, setSaturation)
+        # cv2.setTrackbarPos("Saturation","Advanced Settings",int(saturation))
+        # cv2.createTrackbar("Exposure", "Advanced Settings", -10, 10, setExposure)
+        # cv2.setTrackbarPos("Exposure","Advanced Settings",int(exposure))
+        cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
+        #cv2.setTrackbarPos("X Start","Advanced Settings",int(sx1))
+        cv2.createTrackbar("X End", "Advanced Settings", int(sx2), 640, setXEnd)
+        #cv2.setTrackbarPos("X End","Advanced Settings",int(sx2))
+        cv2.createTrackbar("Y Start", "Advanced Settings", int(y1), 460, setYStart)
+        #cv2.setTrackbarPos("Y Start","Advanced Settings",int(y1))
+        cv2.createTrackbar("Y End", "Advanced Settings", int(y2), 460, setYEnd)
+        #cv2.setTrackbarPos("Y End","Advanced Settings",int(y2))
+        cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
+        #cv2.setTrackbarPos("Radius","Advanced Settings",int(ballradius))
+    if key == ord("d"):
+        args["debug"] = 1
 
 
 # close all windows

@@ -1,5 +1,6 @@
 *.xlsx
 *.mov
 *.mp4
+*.mkv
 dist/
 readme-priv.md
