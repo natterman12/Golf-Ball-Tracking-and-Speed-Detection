@@ -447,6 +447,8 @@ while True:
     
     imgColor, mask = myColorFinder.update(hsv, hsvVals)
 
+    mask = mask[y1:y2, sx1:640]
+
     # Mask now comes from ColorFinder
     #mask = cv2.erode(mask, None, iterations=1)
     #mask = cv2.dilate(mask, None, iterations=5)
@@ -497,9 +499,11 @@ while True:
             radius = 0
             # Eliminate countours that are outside the y dimensions of the detection zone
             ((tempcenterx, tempcentery), tempradius) = cv2.minEnclosingCircle(cnts[index])
+            tempcenterx = tempcenterx + sx1
+            tempcentery = tempcentery + y1
             if (tempcentery >= y1 and tempcentery <= y2):
                 rangefactor = 150
-                cv2.drawContours(frame, cnts, index, (60, 255, 255), 1)
+                cv2.drawContours(mask, cnts, index, (60, 255, 255), 1)
                 cv2.putText(frame,"Radius:"+str(int(tempradius)),(int(tempcenterx)+3, int(tempcentery)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                 # Eliminate countours significantly different than startCircle by comparing radius in range
                 if (started == True and startCircle[2]+rangefactor > tempradius and startCircle[2]-10 < tempradius):
@@ -523,7 +527,6 @@ while True:
 
             # only proceed if the radius meets a minimum size
             if radius >=5:
-                # radius = 30
                 # draw the circle and centroid on the frame,
                 # then update the list of tracked points  
                 circle = (x,y,radius)
@@ -776,9 +779,9 @@ while True:
         cv2.putText(frame,"HLA: "+str(lastShotHLA)+" Degrees",(300,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     
     if started:
-        cv2.line(frame,(sx2-sx1,startCircle[1]),(sx2-sx1+400,startCircle[1]),(255, 255, 255),4,cv2.LINE_AA)
+        cv2.line(frame,(sx2,startCircle[1]),(sx2+400,startCircle[1]),(255, 255, 255),4,cv2.LINE_AA)
     else:
-        cv2.line(frame,(sx2-sx1,int(y1+((y2-y1)/2))),(sx2-sx1+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
+        cv2.line(frame,(sx2,int(y1+((y2-y1)/2))),(sx2+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
     
     if args.get("video", False):
         out1.write(frame)
