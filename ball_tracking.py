@@ -24,6 +24,8 @@ print(parser.get('putting', 'startx1'))
 
 ballradius = 0
 
+flipImage = 0
+
 
 if parser.has_option('putting', 'startx1'):
     sx1=int(parser.get('putting', 'startx1'))
@@ -45,6 +47,10 @@ if parser.has_option('putting', 'radius'):
     ballradius=int(parser.get('putting', 'radius'))
 else:
     ballradius=0
+if parser.has_option('putting', 'flip'):
+    flipImage=int(parser.get('putting', 'flip'))
+else:
+    flipImage=0
 
 
 # Detection Gateway
@@ -89,6 +95,22 @@ speed = 0
 
 tim1 = 0
 tim2 = 0
+
+# calibration
+
+colorcount = 0
+calibrationtime = time.time()
+calObjectCount = 0
+calColorObjectCount = []
+calibrationTimeFrame = 30
+
+# Calibrate Recording Indicator
+
+record = True
+
+# Videofile Indicator
+
+videofile = False
 
 
 # construct the argument parse and parse the arguments
@@ -165,7 +187,7 @@ if args.get("ballcolor", False):
         case "red":
             hsvVals = red             
         case "red2":
-            hsvVals = red2   
+            hsvVals = red2             
         case _:
             hsvVals = yellow
 
@@ -196,6 +218,7 @@ if not args.get("video", False):
     # otherwise, grab a reference to the video file
 else:
     vs = cv2.VideoCapture(args["video"])
+    videofile = True
 
 # Get video metadata
 video_fps = vs.get(cv2.CAP_PROP_FPS)
@@ -215,7 +238,7 @@ if type(video_fps) == float:
 
     if video_fps > 30.0:
         new_fps = []
-        new_fps.append(60)
+        new_fps.append(video_fps)
     video_fps = new_fps
 
 # we are using x264 codec for mp4
@@ -315,14 +338,25 @@ def setBallRadius(value):
     ballradius = int(value)
     parser.set('putting', 'radius', str(ballradius))
     parser.write(open(CFG_FILE, "w"))
-    pass 
+    pass
+
+def setFlip(value):
+    print(value)    
+    global flipImage
+    flipImage = int(value)
+    parser.set('putting', 'flip', str(flipImage))
+    parser.write(open(CFG_FILE, "w"))
+    pass  
 
 def GetAngle (p1, p2):
     x1, y1 = p1
     x2, y2 = p2
     dX = x2 - x1
     dY = y2 - y1
-    rads = math.atan2 (-dY, dX) #wrong for finding angle/declination?
+    rads = math.atan2 (-dY, dX)
+
+    if flipImage == 1 and videofile == False:    	
+        rads = rads*-1
     return math.degrees (rads)
 
 def rgb2yuv(rgb):
@@ -348,13 +382,6 @@ def yuv2rgb(yuv):
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
-colorcount = 0
-calibrationtime = time.time()
-calObjectCount = 0
-calColorObjectCount = []
-calibrationTimeFrame = 30
-record = True
-
 while True:
     
     # set the frameTime
@@ -368,6 +395,9 @@ while True:
     else:
         # check for calibration
         ret, frame = vs.read()
+        # flip image on y-axis
+        if flipImage == 1 and videofile == False:	
+            frame = cv2.flip(frame, flipImage)
         
         if args["ballcolor"] == "calibrate":
             if record == False:
@@ -380,14 +410,18 @@ while True:
                     if colorcount == len(calibrationcolor):
                         vs.release()
                         vs = cv2.VideoCapture(webcamindex)
+                        videofile = False
                         #vs.set(cv2.CAP_PROP_FPS, 60)
                         ret, frame = vs.read()
+                        # flip image on y-axis
+                        if flipImage == 1 and videofile == False:    	
+                            frame = cv2.flip(frame, flipImage)
                         print("Calibration Finished:"+str(calColorObjectCount))
                         cv2.putText(frame,"Calibration Finished:",(150,100),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                         i = 20
                         texty = 100
                         for calObject in calColorObjectCount:
-                            texty = texty+i
+                            texty = texty+irecord
                             cv2.putText(frame,str(calObject),(150,texty),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                         texty = texty+i
                         cv2.putText(frame,"Hit any key and choose color with the highest count.",(150,texty),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
@@ -399,6 +433,7 @@ while True:
                         vs.release()                        
                         # grab the calibration video
                         vs = cv2.VideoCapture('Calibration.mp4')
+                        videofile = True
                         # grab the current frame
                         ret, frame = vs.read()
                 else:
@@ -413,6 +448,7 @@ while True:
                     vs.release()
                     # grab the calibration video
                     vs = cv2.VideoCapture('Calibration.mp4')
+                    videofile = True
                     # grab the current frame
                     ret, frame = vs.read()
                 cv2.putText(frame,"Calibration Mode:",(200,100),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255)) 
@@ -427,6 +463,7 @@ while True:
             break
 
     origframe = frame
+
        
     # cropping needed for video files as they are too big
     if args.get("debug", False):   
@@ -597,7 +634,7 @@ while True:
                                     #check if HLA is inverted
                                     similarHLA = False
                                     if left == True:
-                                        if ((previousHLA <= 0 and currentHLA <=0) or (previousHLA >= 0 and currentHLA >=0)):
+                                        if ((previousHLA <= 0 and currentHLA <=2) or (previousHLA >= 0 and currentHLA >=-2)):
                                             hldDiff = (pow(currentHLA, 2) - pow(previousHLA, 2))
                                             if  hldDiff < 30:
                                                 similarHLA = True
@@ -605,7 +642,7 @@ while True:
                                             similarHLA = False
                                     else:
                                         similarHLA = True
-                                    if ( x > pts[0][0]and similarHLA == True): # and (pow((y - (pts[0][1])), 2)) <= pow((y - (pts[1][1])), 2) 
+                                    if ( x > (pts[0][0]+50)and similarHLA == True): # and (pow((y - (pts[0][1])), 2)) <= pow((y - (pts[1][1])), 2) 
                                         cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 255, 0),2)  # Changes line color to green
                                         tim2 = frameTime # Final time
                                         print("Ball Left. Position: "+str(center))
@@ -807,7 +844,7 @@ while True:
         # cv2.createTrackbar("FPS", "Advanced Settings", int(video_fps[0]),int(video_fps[0]), setFPS)
         # cv2.setTrackbarPos("FPS","Advanced Settings",int(video_fps[0]))
         # cv2.createTrackbar("Saturation", "Advanced Settings", 0, 255, setSaturation)
-        # cv2.setTrackbarPos("Saturation","Advanced Settings",int(saturation))
+        #cv2.setTrackbarPos("Saturation","Advanced Settings",int(saturation))
         # cv2.createTrackbar("Exposure", "Advanced Settings", -10, 10, setExposure)
         # cv2.setTrackbarPos("Exposure","Advanced Settings",int(exposure))
         cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
@@ -820,8 +857,11 @@ while True:
         #cv2.setTrackbarPos("Y End","Advanced Settings",int(y2))
         cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
         #cv2.setTrackbarPos("Radius","Advanced Settings",int(ballradius))
+        cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
     if key == ord("d"):
         args["debug"] = 1
+        myColorFinder = ColorFinder(True)
+        myColorFinder.setTrackbarValues(hsvVals)
 
 
 # close all windows
