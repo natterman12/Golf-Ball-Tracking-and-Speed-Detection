@@ -30,7 +30,7 @@ Default color to be found is yellow - You can adapt this by running -c as color 
 
 "python ball_tracking.py -c orange"
 
-In the app you can hit "a" for advanced settings to define the ball detection area or hit "d" to get a debug view of the video feed to see the color detection mask.
+In the app you can hit "a" for advanced settings to define the ball detection area, flip and darken image or hit "d" to get a debug view of the video feed to see the color detection mask.
 
 There are also other options to for start to pass a video file or image file
 
