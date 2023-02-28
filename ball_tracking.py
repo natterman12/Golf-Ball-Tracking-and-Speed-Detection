@@ -696,7 +696,7 @@ while True:
     else:
         cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
 
-    cv2.putText(frame,"FPS:"+str(video_fps[0]),(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
     # Mark Start Circle
     if started:
@@ -827,9 +827,9 @@ while True:
 
     if not lastShotSpeed == 0:
         cv2.line(frame,(lastShotStart),(lastShotEnd),(0, 255, 255),4,cv2.LINE_AA)      
-        cv2.putText(frame,"Last Shot",(300,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-        cv2.putText(frame,"Ball Speed: "+str(lastShotSpeed)+" MPH",(300,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-        cv2.putText(frame,"HLA: "+str(lastShotHLA)+" Degrees",(300,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+        cv2.putText(frame,"Last Shot",(400,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
+        cv2.putText(frame,"Ball Speed: %.2f" % lastShotSpeed+" MPH",(400,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
+        cv2.putText(frame,"HLA:  %.2f" % lastShotHLA+" Degrees",(400,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
     
     if started:
         cv2.line(frame,(sx2,startCircle[1]),(sx2+400,startCircle[1]),(255, 255, 255),4,cv2.LINE_AA)
