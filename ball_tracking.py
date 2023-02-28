@@ -23,7 +23,7 @@ print(parser.get('putting', 'startx1'))
 # Startpoint Zone
 
 ballradius = 0
-
+darkness = 0
 flipImage = 0
 
 
@@ -51,6 +51,10 @@ if parser.has_option('putting', 'flip'):
     flipImage=int(parser.get('putting', 'flip'))
 else:
     flipImage=0
+if parser.has_option('putting', 'darkness'):
+    darkness=int(parser.get('putting', 'darkness'))
+else:
+    darkness=0
 
 
 # Detection Gateway
@@ -139,6 +143,7 @@ red2 = {'hmin': 1, 'smin': 240, 'vmin': 61, 'hmax': 50, 'smax': 255, 'vmax': 249
 #white
 white = {'hmin': 168, 'smin': 218, 'vmin': 118, 'hmax': 179, 'smax': 247, 'vmax': 216} # very light
 white2 = {'hmin': 159, 'smin': 217, 'vmin': 152, 'hmax': 179, 'smax': 255, 'vmax': 255} # light
+white3 = {'hmin': 0, 'smin': 181, 'vmin': 0, 'hmax': 42, 'smax': 255, 'vmax': 255}
 
 #yellow
 
@@ -226,6 +231,8 @@ height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = vs.get(cv2.CAP_PROP_FRAME_WIDTH)
 saturation = vs.get(cv2.CAP_PROP_SATURATION)
 exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+
+
 
 if type(video_fps) == float:
     if video_fps == 0.0:
@@ -346,7 +353,15 @@ def setFlip(value):
     flipImage = int(value)
     parser.set('putting', 'flip', str(flipImage))
     parser.write(open(CFG_FILE, "w"))
-    pass  
+    pass
+
+def setDarkness(value):
+    print(value)    
+    global darkness
+    darkness = int(value)
+    parser.set('putting', 'darkness', str(darkness))
+    parser.write(open(CFG_FILE, "w"))
+    pass    
 
 def GetAngle (p1, p2):
     x1, y1 = p1
@@ -462,8 +477,9 @@ while True:
             print("no frame")
             break
 
-    origframe = frame
 
+    origframe = frame.copy()
+    cv2.normalize(frame, frame, 0-darkness, 255-darkness, norm_type=cv2.NORM_MINMAX)
        
     # cropping needed for video files as they are too big
     if args.get("debug", False):   
@@ -840,7 +856,7 @@ while True:
         break
     if key == ord("a"):
         cv2.namedWindow("Advanced Settings")
-        cv2.resizeWindow("Advanced Settings", 640, 240)
+        cv2.resizeWindow("Advanced Settings", 760, 300)
         # cv2.createTrackbar("FPS", "Advanced Settings", int(video_fps[0]),int(video_fps[0]), setFPS)
         # cv2.setTrackbarPos("FPS","Advanced Settings",int(video_fps[0]))
         # cv2.createTrackbar("Saturation", "Advanced Settings", 0, 255, setSaturation)
@@ -858,6 +874,7 @@ while True:
         cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
         #cv2.setTrackbarPos("Radius","Advanced Settings",int(ballradius))
         cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
+        cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
     if key == ord("d"):
         args["debug"] = 1
         myColorFinder = ColorFinder(True)
