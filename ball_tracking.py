@@ -25,6 +25,7 @@ print(parser.get('putting', 'startx1'))
 ballradius = 0
 darkness = 0
 flipImage = 0
+mjpegenabled = 0
 
 
 if parser.has_option('putting', 'startx1'):
@@ -55,6 +56,10 @@ if parser.has_option('putting', 'darkness'):
     darkness=int(parser.get('putting', 'darkness'))
 else:
     darkness=0
+if parser.has_option('putting', 'mjpeg'):
+    mjpegenabled=int(parser.get('putting', 'mjpeg'))
+else:
+    mjpegenabled=0
 
 
 # Detection Gateway
@@ -208,6 +213,7 @@ else:
 
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
+fpsqueue = deque(maxlen=240)
 
 webcamindex = 0
 
@@ -218,9 +224,16 @@ if args.get("camera", False):
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-    vs = cv2.VideoCapture(webcamindex)
-    #vs.set(cv2.CAP_PROP_FPS, 60) 
-    # otherwise, grab a reference to the video file
+    if mjpegenabled == 0:
+        vs = cv2.VideoCapture(webcamindex)
+    else:
+        vs = cv2.VideoCapture(webcamindex + cv2.CAP_DSHOW)
+        mjpeg = cv2.VideoWriter_fourcc(*'MJPG')
+        vs.set(cv2.CAP_PROP_FOURCC, mjpeg)
+
+    print(vs.get(cv2.CAP_PROP_BACKEND))
+    print(vs.get(cv2.CAP_PROP_FOURCC))
+    print(vs.get(cv2.CAP_PROP_FPS))
 else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
@@ -236,21 +249,18 @@ exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
 
 if type(video_fps) == float:
     if video_fps == 0.0:
+        e = vs.set(cv2.CAP_PROP_FPS, 60)
         new_fps = []
-        new_fps.append(60)
+        new_fps.append(0)
 
     if video_fps > 0.0:
-        new_fps = []
-        new_fps.append(30)
-
-    if video_fps > 30.0:
         new_fps = []
         new_fps.append(video_fps)
     video_fps = new_fps
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
+#out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 
 
@@ -397,13 +407,19 @@ def yuv2rgb(yuv):
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
+previousFrame = cv2.Mat
+
 while True:
-    
     # set the frameTime
     frameTime = time.time()
+    fpsqueue.append(frameTime)
+    
     actualFPS = actualFPS + 1
-    videoTimeDiff = frameTime - videoStartTime
-    fps = actualFPS / videoTimeDiff
+    videoTimeDiff = fpsqueue[len(fpsqueue)-1] - fpsqueue[0]
+    if videoTimeDiff != 0:
+        fps = len(fpsqueue) / videoTimeDiff
+    else:
+        fps = 0
 
     if args.get("img", False):
         frame = cv2.imread(args["img"])
@@ -436,7 +452,7 @@ while True:
                         i = 20
                         texty = 100
                         for calObject in calColorObjectCount:
-                            texty = texty+irecord
+                            texty = texty+i
                             cv2.putText(frame,str(calObject),(150,texty),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                         texty = texty+i
                         cv2.putText(frame,"Hit any key and choose color with the highest count.",(150,texty),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
@@ -477,8 +493,9 @@ while True:
             print("no frame")
             break
 
-
     origframe = frame.copy()
+    
+    
     cv2.normalize(frame, frame, 0-darkness, 255-darkness, norm_type=cv2.NORM_MINMAX)
        
     # cropping needed for video files as they are too big
@@ -696,6 +713,7 @@ while True:
     else:
         cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
 
+    cv2.putText(frame,"Actual FPS: %.2f" % fps,(250,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
     # Mark Start Circle
@@ -836,8 +854,8 @@ while True:
     else:
         cv2.line(frame,(sx2,int(y1+((y2-y1)/2))),(sx2+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
     
-    if args.get("video", False):
-        out1.write(frame)
+    #if args.get("video", False):
+    #    out1.write(frame)
 
     if out2:
         try:
@@ -880,10 +898,18 @@ while True:
         myColorFinder = ColorFinder(True)
         myColorFinder.setTrackbarValues(hsvVals)
 
+    if actualFPS > 1:
+        grayPreviousFrame = cv2.cvtColor(previousFrame, cv2.COLOR_BGR2GRAY)
+        grayOrigframe = cv2.cvtColor(origframe, cv2.COLOR_BGR2GRAY)
+        changedFrame = cv2.compare(grayPreviousFrame, grayOrigframe,cv2.CMP_NE)
+        nz = cv2.countNonZero(changedFrame)
+        print(nz)
+        if nz == 0:
+            actualFPS = actualFPS - 1
+            fpsqueue.pop()
+    previousFrame = origframe.copy()
+
 
 # close all windows
-if out1:
-    out1.release()
-
 vs.release()
 cv2.destroyAllWindows()
