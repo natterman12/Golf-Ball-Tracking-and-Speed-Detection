@@ -217,6 +217,9 @@ fpsqueue = deque(maxlen=240)
 
 webcamindex = 0
 
+message = ""
+
+
 # if a webcam index is supplied, grab the reference
 if args.get("camera", False):
     webcamindex = args["camera"]
@@ -230,10 +233,13 @@ if not args.get("video", False):
         vs = cv2.VideoCapture(webcamindex + cv2.CAP_DSHOW)
         mjpeg = cv2.VideoWriter_fourcc(*'MJPG')
         vs.set(cv2.CAP_PROP_FOURCC, mjpeg)
-
-    print(vs.get(cv2.CAP_PROP_BACKEND))
-    print(vs.get(cv2.CAP_PROP_FOURCC))
-    print(vs.get(cv2.CAP_PROP_FPS))
+    if vs.get(cv2.CAP_PROP_BACKEND) == -1:
+        message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only support compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
+    else:
+        print(vs.get(cv2.CAP_PROP_BACKEND))
+        print(vs.get(cv2.CAP_PROP_FOURCC))
+        print(vs.get(cv2.CAP_PROP_FPS))
+    
 else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
@@ -365,6 +371,17 @@ def setFlip(value):
     parser.write(open(CFG_FILE, "w"))
     pass
 
+def setMjpeg(value):
+    print(value)    
+    global mjpegenabled
+    global message
+    vs.release()
+    message = "Video Codec changed - Please restart the putting app"
+    mjpegenabled = int(value)
+    parser.set('putting', 'mjpeg', str(mjpegenabled))
+    parser.write(open(CFG_FILE, "w"))
+    pass
+
 def setDarkness(value):
     print(value)    
     global darkness
@@ -491,6 +508,11 @@ while True:
         # then we have reached the end of the video
         if frame is None:
             print("no frame")
+            frame = cv2.imread("error.png")
+            cv2.putText(frame,"Error: "+"No Frame",(20, 20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+            cv2.putText(frame,"Message: "+message,(20, 40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+            cv2.imshow("Putting View: Press q to exit / a for adv. settings", frame)
+            cv2.waitKey(0)
             break
 
     origframe = frame.copy()
@@ -874,7 +896,7 @@ while True:
         break
     if key == ord("a"):
         cv2.namedWindow("Advanced Settings")
-        cv2.resizeWindow("Advanced Settings", 760, 300)
+        cv2.resizeWindow("Advanced Settings", 760, 400)
         # cv2.createTrackbar("FPS", "Advanced Settings", int(video_fps[0]),int(video_fps[0]), setFPS)
         # cv2.setTrackbarPos("FPS","Advanced Settings",int(video_fps[0]))
         # cv2.createTrackbar("Saturation", "Advanced Settings", 0, 255, setSaturation)
@@ -892,6 +914,7 @@ while True:
         cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
         #cv2.setTrackbarPos("Radius","Advanced Settings",int(ballradius))
         cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
+        cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
         cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
     if key == ord("d"):
         args["debug"] = 1
