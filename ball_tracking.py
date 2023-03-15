@@ -375,8 +375,9 @@ def setMjpeg(value):
     print(value)    
     global mjpegenabled
     global message
-    vs.release()
-    message = "Video Codec changed - Please restart the putting app"
+    if mjpegenabled != int(value):
+        vs.release()
+        message = "Video Codec changed - Please restart the putting app"
     mjpegenabled = int(value)
     parser.set('putting', 'mjpeg', str(mjpegenabled))
     parser.write(open(CFG_FILE, "w"))
