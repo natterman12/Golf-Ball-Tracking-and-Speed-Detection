@@ -278,6 +278,21 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 #out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
+def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
+    dim = None
+    (h, w) = image.shape[:2]
+
+    if width is None and height is None:
+        return image
+    if width is None:
+        r = height / float(h)
+        dim = (int(w * r), height)
+    else:
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    return cv2.resize(image, dim, interpolation=inter)
+
 def decode(frame):
     left = np.zeros((400,632,3), np.uint8)
     right = np.zeros((400,632,3), np.uint8)
@@ -905,7 +920,15 @@ while True:
             out2.write(origframe)
         except Exception as e:
             print(e)
-    cv2.imshow("Putting View: Press q to exit / a for adv. settings", frame)
+    
+    # show main putting window
+    outputframe = resizeWithAspectRatio(frame, width=640)
+    cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
+    #cv2.moveWindow("Putting View: Press q to exit / a for adv. settings", 20,20)
+
+    # cv2.namedWindow("Putting View: Press q to exit / a for adv. settings",cv2.WINDOW_KEEPRATIO)
+    # Resize the Window
+    # cv2.resizeWindow("Putting View: Press q to exit / a for adv. settings", 340, 240)
     
     if args.get("debug", False):
         cv2.imshow("MaskFrame", mask)
@@ -925,15 +948,10 @@ while True:
         # cv2.createTrackbar("Exposure", "Advanced Settings", -10, 10, setExposure)
         # cv2.setTrackbarPos("Exposure","Advanced Settings",int(exposure))
         cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
-        #cv2.setTrackbarPos("X Start","Advanced Settings",int(sx1))
         cv2.createTrackbar("X End", "Advanced Settings", int(sx2), 640, setXEnd)
-        #cv2.setTrackbarPos("X End","Advanced Settings",int(sx2))
         cv2.createTrackbar("Y Start", "Advanced Settings", int(y1), 460, setYStart)
-        #cv2.setTrackbarPos("Y Start","Advanced Settings",int(y1))
         cv2.createTrackbar("Y End", "Advanced Settings", int(y2), 460, setYEnd)
-        #cv2.setTrackbarPos("Y End","Advanced Settings",int(y2))
         cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
-        #cv2.setTrackbarPos("Radius","Advanced Settings",int(ballradius))
         cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
         cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
         cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
