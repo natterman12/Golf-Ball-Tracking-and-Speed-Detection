@@ -18,14 +18,13 @@ CFG_FILE = 'config.ini'
 
 parser.read(CFG_FILE)
 
-print(parser.get('putting', 'startx1'))
-
 # Startpoint Zone
 
 ballradius = 0
 darkness = 0
 flipImage = 0
 mjpegenabled = 0
+ps4=0
 
 
 if parser.has_option('putting', 'startx1'):
@@ -60,6 +59,10 @@ if parser.has_option('putting', 'mjpeg'):
     mjpegenabled=int(parser.get('putting', 'mjpeg'))
 else:
     mjpegenabled=0
+if parser.has_option('putting', 'ps4'):
+    ps4=int(parser.get('putting', 'ps4'))
+else:
+    ps4=0
 
 
 # Detection Gateway
@@ -173,33 +176,32 @@ calibrate = {}
 hsvVals = yellow
 
 if args.get("ballcolor", False):
-    match args["ballcolor"]:
-        case "white":
-            hsvVals = white
-        case "white2":
-            hsvVals = white2
-        case "yellow":
-            hsvVals = yellow 
-        case "yellow2":
-            hsvVals = yellow2 
-        case "orange":
-            hsvVals = orange
-        case "orange2":
-            hsvVals = orange2
-        case "orange3":
-            hsvVals = orange3
-        case "orange4":
-            hsvVals = orange4
-        case "green":
-            hsvVals = green 
-        case "green2":
-            hsvVals = green2               
-        case "red":
-            hsvVals = red             
-        case "red2":
-            hsvVals = red2             
-        case _:
-            hsvVals = yellow
+    if args["ballcolor"] == "white":
+        hsvVals = white
+    elif args["ballcolor"] == "white2":
+        hsvVals = white2
+    elif args["ballcolor"] ==  "yellow":
+        hsvVals = yellow 
+    elif args["ballcolor"] ==  "yellow2":
+        hsvVals = yellow2 
+    elif args["ballcolor"] ==  "orange":
+        hsvVals = orange
+    elif args["ballcolor"] ==  "orange2":
+        hsvVals = orange2
+    elif args["ballcolor"] ==  "orange3":
+        hsvVals = orange3
+    elif args["ballcolor"] ==  "orange4":
+        hsvVals = orange4
+    elif args["ballcolor"] ==  "green":
+        hsvVals = green 
+    elif args["ballcolor"] ==  "green2":
+        hsvVals = green2               
+    elif args["ballcolor"] ==  "red":
+        hsvVals = red             
+    elif args["ballcolor"] ==  "red2":
+        hsvVals = red2             
+    else:
+        hsvVals = yellow
 
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
     
@@ -231,14 +233,21 @@ if not args.get("video", False):
         vs = cv2.VideoCapture(webcamindex)
     else:
         vs = cv2.VideoCapture(webcamindex + cv2.CAP_DSHOW)
-        mjpeg = cv2.VideoWriter_fourcc(*'MJPG')
+        mjpeg = cv2.VideoWriter_fourcc('M','J','P','G')
         vs.set(cv2.CAP_PROP_FOURCC, mjpeg)
+
     if vs.get(cv2.CAP_PROP_BACKEND) == -1:
-        message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only support compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
+        message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
     else:
-        print(vs.get(cv2.CAP_PROP_BACKEND))
-        print(vs.get(cv2.CAP_PROP_FOURCC))
-        print(vs.get(cv2.CAP_PROP_FPS))
+        if ps4 == 1:
+            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
+            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
+            vs.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
+            vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
+            vs.set(cv2.CAP_PROP_FPS, 120)
+        print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
+        print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
+        print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
     
 else:
     vs = cv2.VideoCapture(args["video"])
@@ -269,7 +278,15 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 #out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
-
+def decode(frame):
+    left = np.zeros((400,632,3), np.uint8)
+    right = np.zeros((400,632,3), np.uint8)
+    
+    for i in range(400):
+        left[i] = frame[i, 32: 640 + 24] 
+        right[i] = frame[i, 640 + 24: 640 + 24 + 632] 
+    
+    return (left, right)
 
 def setFPS(value):
     print(value)
@@ -444,6 +461,9 @@ while True:
     else:
         # check for calibration
         ret, frame = vs.read()
+        if ps4 == 1 and frame is not None:
+            leftframe, rightframe = decode(frame)
+            frame = leftframe
         # flip image on y-axis
         if flipImage == 1 and videofile == False:	
             frame = cv2.flip(frame, flipImage)
@@ -927,7 +947,7 @@ while True:
         grayOrigframe = cv2.cvtColor(origframe, cv2.COLOR_BGR2GRAY)
         changedFrame = cv2.compare(grayPreviousFrame, grayOrigframe,cv2.CMP_NE)
         nz = cv2.countNonZero(changedFrame)
-        print(nz)
+        #print(nz)
         if nz == 0:
             actualFPS = actualFPS - 1
             fpsqueue.pop()
