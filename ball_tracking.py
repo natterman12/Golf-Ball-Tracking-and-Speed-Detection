@@ -18,13 +18,14 @@ CFG_FILE = 'config.ini'
 
 parser.read(CFG_FILE)
 
-print(parser.get('putting', 'startx1'))
-
 # Startpoint Zone
 
 ballradius = 0
 darkness = 0
 flipImage = 0
+mjpegenabled = 0
+ps4=0
+overwriteFPS = 0
 
 
 if parser.has_option('putting', 'startx1'):
@@ -55,6 +56,18 @@ if parser.has_option('putting', 'darkness'):
     darkness=int(parser.get('putting', 'darkness'))
 else:
     darkness=0
+if parser.has_option('putting', 'mjpeg'):
+    mjpegenabled=int(parser.get('putting', 'mjpeg'))
+else:
+    mjpegenabled=0
+if parser.has_option('putting', 'ps4'):
+    ps4=int(parser.get('putting', 'ps4'))
+else:
+    ps4=0
+if parser.has_option('putting', 'fps'):
+    overwriteFPS=int(parser.get('putting', 'fps'))
+else:
+    overwriteFPS=0
 
 
 # Detection Gateway
@@ -131,6 +144,8 @@ ap.add_argument("-c", "--ballcolor",
                 help="ball color - default is white")
 ap.add_argument("-d", "--debug",
                 help="debug - color finder and wait timer")
+ap.add_argument("-r", "--resize", type=int, default=640,
+                help="window resize in width pixel - default is 640px")
 args = vars(ap.parse_args())
 
 # define the lower and upper boundaries of the different ball color options (-c)
@@ -168,33 +183,32 @@ calibrate = {}
 hsvVals = yellow
 
 if args.get("ballcolor", False):
-    match args["ballcolor"]:
-        case "white":
-            hsvVals = white
-        case "white2":
-            hsvVals = white2
-        case "yellow":
-            hsvVals = yellow 
-        case "yellow2":
-            hsvVals = yellow2 
-        case "orange":
-            hsvVals = orange
-        case "orange2":
-            hsvVals = orange2
-        case "orange3":
-            hsvVals = orange3
-        case "orange4":
-            hsvVals = orange4
-        case "green":
-            hsvVals = green 
-        case "green2":
-            hsvVals = green2               
-        case "red":
-            hsvVals = red             
-        case "red2":
-            hsvVals = red2             
-        case _:
-            hsvVals = yellow
+    if args["ballcolor"] == "white":
+        hsvVals = white
+    elif args["ballcolor"] == "white2":
+        hsvVals = white2
+    elif args["ballcolor"] ==  "yellow":
+        hsvVals = yellow 
+    elif args["ballcolor"] ==  "yellow2":
+        hsvVals = yellow2 
+    elif args["ballcolor"] ==  "orange":
+        hsvVals = orange
+    elif args["ballcolor"] ==  "orange2":
+        hsvVals = orange2
+    elif args["ballcolor"] ==  "orange3":
+        hsvVals = orange3
+    elif args["ballcolor"] ==  "orange4":
+        hsvVals = orange4
+    elif args["ballcolor"] ==  "green":
+        hsvVals = green 
+    elif args["ballcolor"] ==  "green2":
+        hsvVals = green2               
+    elif args["ballcolor"] ==  "red":
+        hsvVals = red             
+    elif args["ballcolor"] ==  "red2":
+        hsvVals = red2             
+    else:
+        hsvVals = yellow
 
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
     
@@ -208,8 +222,12 @@ else:
 
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
+fpsqueue = deque(maxlen=240)
 
 webcamindex = 0
+
+message = ""
+
 
 # if a webcam index is supplied, grab the reference
 if args.get("camera", False):
@@ -218,9 +236,26 @@ if args.get("camera", False):
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-    vs = cv2.VideoCapture(webcamindex)
-    #vs.set(cv2.CAP_PROP_FPS, 60) 
-    # otherwise, grab a reference to the video file
+    if mjpegenabled == 0:
+        vs = cv2.VideoCapture(webcamindex)
+    else:
+        vs = cv2.VideoCapture(webcamindex + cv2.CAP_DSHOW)
+        mjpeg = cv2.VideoWriter_fourcc('M','J','P','G')
+        vs.set(cv2.CAP_PROP_FOURCC, mjpeg)
+
+    if vs.get(cv2.CAP_PROP_BACKEND) == -1:
+        message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
+    else:
+        if ps4 == 1:
+            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
+            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
+            vs.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
+            vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
+            vs.set(cv2.CAP_PROP_FPS, 120)
+        print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
+        print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
+        print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+    
 else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
@@ -234,26 +269,53 @@ exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
 
 
 
+
 if type(video_fps) == float:
     if video_fps == 0.0:
+        e = vs.set(cv2.CAP_PROP_FPS, 60)
         new_fps = []
-        new_fps.append(60)
+        new_fps.append(0)
 
     if video_fps > 0.0:
-        new_fps = []
-        new_fps.append(30)
-
-    if video_fps > 30.0:
         new_fps = []
         new_fps.append(video_fps)
     video_fps = new_fps
 
+# Check if FPS is overwritten in config
+
+if overwriteFPS != 0:
+    vs.set(cv2.CAP_PROP_FPS, overwriteFPS)
+    print("Overwrite FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
-out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
+#out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
+out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
+def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
+    dim = None
+    (h, w) = image.shape[:2]
 
+    if width is None and height is None:
+        return image
+    if width is None:
+        r = height / float(h)
+        dim = (int(w * r), height)
+    else:
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    return cv2.resize(image, dim, interpolation=inter)
+
+def decode(frame):
+    left = np.zeros((400,632,3), np.uint8)
+    right = np.zeros((400,632,3), np.uint8)
+    
+    for i in range(400):
+        left[i] = frame[i, 32: 640 + 24] 
+        right[i] = frame[i, 640 + 24: 640 + 24 + 632] 
+    
+    return (left, right)
 
 def setFPS(value):
     print(value)
@@ -355,6 +417,30 @@ def setFlip(value):
     parser.write(open(CFG_FILE, "w"))
     pass
 
+def setMjpeg(value):
+    print(value)    
+    global mjpegenabled
+    global message
+    if mjpegenabled != int(value):
+        vs.release()
+        message = "Video Codec changed - Please restart the putting app"
+    mjpegenabled = int(value)
+    parser.set('putting', 'mjpeg', str(mjpegenabled))
+    parser.write(open(CFG_FILE, "w"))
+    pass
+
+def setOverwriteFPS(value):
+    print(value)    
+    global overwriteFPS
+    global message
+    if overwriteFPS != int(value):
+        vs.release()
+        message = "Overwrite of FPS changed - Please restart the putting app"
+    overwriteFPS = int(value)
+    parser.set('putting', 'fps', str(overwriteFPS))
+    parser.write(open(CFG_FILE, "w"))
+    pass
+
 def setDarkness(value):
     print(value)    
     global darkness
@@ -397,19 +483,28 @@ def yuv2rgb(yuv):
 # allow the camera or video file to warm up
 time.sleep(2.0)
 
+previousFrame = cv2.Mat
+
 while True:
-    
     # set the frameTime
     frameTime = time.time()
+    fpsqueue.append(frameTime)
+    
     actualFPS = actualFPS + 1
-    videoTimeDiff = frameTime - videoStartTime
-    fps = actualFPS / videoTimeDiff
+    videoTimeDiff = fpsqueue[len(fpsqueue)-1] - fpsqueue[0]
+    if videoTimeDiff != 0:
+        fps = len(fpsqueue) / videoTimeDiff
+    else:
+        fps = 0
 
     if args.get("img", False):
         frame = cv2.imread(args["img"])
     else:
         # check for calibration
         ret, frame = vs.read()
+        if ps4 == 1 and frame is not None:
+            leftframe, rightframe = decode(frame)
+            frame = leftframe
         # flip image on y-axis
         if flipImage == 1 and videofile == False:	
             frame = cv2.flip(frame, flipImage)
@@ -436,7 +531,7 @@ while True:
                         i = 20
                         texty = 100
                         for calObject in calColorObjectCount:
-                            texty = texty+irecord
+                            texty = texty+i
                             cv2.putText(frame,str(calObject),(150,texty),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                         texty = texty+i
                         cv2.putText(frame,"Hit any key and choose color with the highest count.",(150,texty),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
@@ -475,10 +570,16 @@ while True:
         # then we have reached the end of the video
         if frame is None:
             print("no frame")
+            frame = cv2.imread("error.png")
+            cv2.putText(frame,"Error: "+"No Frame",(20, 20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+            cv2.putText(frame,"Message: "+message,(20, 40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+            cv2.imshow("Putting View: Press q to exit / a for adv. settings", frame)
+            cv2.waitKey(0)
             break
 
-
     origframe = frame.copy()
+    
+    
     cv2.normalize(frame, frame, 0-darkness, 255-darkness, norm_type=cv2.NORM_MINMAX)
        
     # cropping needed for video files as they are too big
@@ -696,6 +797,7 @@ while True:
     else:
         cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
 
+    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
     # Mark Start Circle
@@ -836,15 +938,26 @@ while True:
     else:
         cv2.line(frame,(sx2,int(y1+((y2-y1)/2))),(sx2+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
     
-    if args.get("video", False):
-        out1.write(frame)
+    #if args.get("video", False):
+    #    out1.write(frame)
 
     if out2:
         try:
             out2.write(origframe)
         except Exception as e:
             print(e)
-    cv2.imshow("Putting View: Press q to exit / a for adv. settings", frame)
+    
+    # show main putting window
+
+    outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
+    cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
+    
+    
+    #cv2.moveWindow("Putting View: Press q to exit / a for adv. settings", 20,20)
+
+    # cv2.namedWindow("Putting View: Press q to exit / a for adv. settings",cv2.WINDOW_KEEPRATIO)
+    # Resize the Window
+    # cv2.resizeWindow("Putting View: Press q to exit / a for adv. settings", 340, 240)
     
     if args.get("debug", False):
         cv2.imshow("MaskFrame", mask)
@@ -856,7 +969,7 @@ while True:
         break
     if key == ord("a"):
         cv2.namedWindow("Advanced Settings")
-        cv2.resizeWindow("Advanced Settings", 760, 300)
+        cv2.resizeWindow("Advanced Settings", 760, 400)
         # cv2.createTrackbar("FPS", "Advanced Settings", int(video_fps[0]),int(video_fps[0]), setFPS)
         # cv2.setTrackbarPos("FPS","Advanced Settings",int(video_fps[0]))
         # cv2.createTrackbar("Saturation", "Advanced Settings", 0, 255, setSaturation)
@@ -864,26 +977,31 @@ while True:
         # cv2.createTrackbar("Exposure", "Advanced Settings", -10, 10, setExposure)
         # cv2.setTrackbarPos("Exposure","Advanced Settings",int(exposure))
         cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
-        #cv2.setTrackbarPos("X Start","Advanced Settings",int(sx1))
         cv2.createTrackbar("X End", "Advanced Settings", int(sx2), 640, setXEnd)
-        #cv2.setTrackbarPos("X End","Advanced Settings",int(sx2))
         cv2.createTrackbar("Y Start", "Advanced Settings", int(y1), 460, setYStart)
-        #cv2.setTrackbarPos("Y Start","Advanced Settings",int(y1))
         cv2.createTrackbar("Y End", "Advanced Settings", int(y2), 460, setYEnd)
-        #cv2.setTrackbarPos("Y End","Advanced Settings",int(y2))
         cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
-        #cv2.setTrackbarPos("Radius","Advanced Settings",int(ballradius))
         cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
+        cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
+        cv2.createTrackbar("FPS", "Advanced Settings", int(overwriteFPS), 240, setOverwriteFPS)
         cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
     if key == ord("d"):
         args["debug"] = 1
         myColorFinder = ColorFinder(True)
         myColorFinder.setTrackbarValues(hsvVals)
 
+    if actualFPS > 1:
+        grayPreviousFrame = cv2.cvtColor(previousFrame, cv2.COLOR_BGR2GRAY)
+        grayOrigframe = cv2.cvtColor(origframe, cv2.COLOR_BGR2GRAY)
+        changedFrame = cv2.compare(grayPreviousFrame, grayOrigframe,cv2.CMP_NE)
+        nz = cv2.countNonZero(changedFrame)
+        #print(nz)
+        if nz == 0:
+            actualFPS = actualFPS - 1
+            fpsqueue.pop()
+    previousFrame = origframe.copy()
+
 
 # close all windows
-if out1:
-    out1.release()
-
 vs.release()
 cv2.destroyAllWindows()
