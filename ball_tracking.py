@@ -25,6 +25,7 @@ darkness = 0
 flipImage = 0
 mjpegenabled = 0
 ps4=0
+overwriteFPS = 0
 
 
 if parser.has_option('putting', 'startx1'):
@@ -63,6 +64,10 @@ if parser.has_option('putting', 'ps4'):
     ps4=int(parser.get('putting', 'ps4'))
 else:
     ps4=0
+if parser.has_option('putting', 'fps'):
+    overwriteFPS=int(parser.get('putting', 'fps'))
+else:
+    overwriteFPS=0
 
 
 # Detection Gateway
@@ -139,6 +144,8 @@ ap.add_argument("-c", "--ballcolor",
                 help="ball color - default is white")
 ap.add_argument("-d", "--debug",
                 help="debug - color finder and wait timer")
+ap.add_argument("-r", "--resize", type=int, default=640,
+                help="window resize in width pixel - default is 640px")
 args = vars(ap.parse_args())
 
 # define the lower and upper boundaries of the different ball color options (-c)
@@ -262,6 +269,7 @@ exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
 
 
 
+
 if type(video_fps) == float:
     if video_fps == 0.0:
         e = vs.set(cv2.CAP_PROP_FPS, 60)
@@ -272,6 +280,12 @@ if type(video_fps) == float:
         new_fps = []
         new_fps.append(video_fps)
     video_fps = new_fps
+
+# Check if FPS is overwritten in config
+
+if overwriteFPS != 0:
+    vs.set(cv2.CAP_PROP_FPS, overwriteFPS)
+    print("Overwrite FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -412,6 +426,18 @@ def setMjpeg(value):
         message = "Video Codec changed - Please restart the putting app"
     mjpegenabled = int(value)
     parser.set('putting', 'mjpeg', str(mjpegenabled))
+    parser.write(open(CFG_FILE, "w"))
+    pass
+
+def setOverwriteFPS(value):
+    print(value)    
+    global overwriteFPS
+    global message
+    if overwriteFPS != int(value):
+        vs.release()
+        message = "Overwrite of FPS changed - Please restart the putting app"
+    overwriteFPS = int(value)
+    parser.set('putting', 'fps', str(overwriteFPS))
     parser.write(open(CFG_FILE, "w"))
     pass
 
@@ -771,7 +797,7 @@ while True:
     else:
         cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
 
-    cv2.putText(frame,"Actual FPS: %.2f" % fps,(250,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
     # Mark Start Circle
@@ -922,8 +948,11 @@ while True:
             print(e)
     
     # show main putting window
-    outputframe = resizeWithAspectRatio(frame, width=640)
+
+    outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
     cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
+    
+    
     #cv2.moveWindow("Putting View: Press q to exit / a for adv. settings", 20,20)
 
     # cv2.namedWindow("Putting View: Press q to exit / a for adv. settings",cv2.WINDOW_KEEPRATIO)
@@ -954,6 +983,7 @@ while True:
         cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
         cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
         cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
+        cv2.createTrackbar("FPS", "Advanced Settings", int(overwriteFPS), 240, setOverwriteFPS)
         cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
     if key == ord("d"):
         args["debug"] = 1
