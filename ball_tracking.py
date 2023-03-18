@@ -481,7 +481,7 @@ def yuv2rgb(yuv):
     return rgb
 
 # allow the camera or video file to warm up
-time.sleep(2.0)
+time.sleep(0.5)
 
 previousFrame = cv2.Mat
 
