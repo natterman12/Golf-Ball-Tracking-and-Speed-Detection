@@ -1,4 +1,4 @@
-# Prototype for Webcam based putting simulation for GSPRO utilizing the R10 connect package:
+# Webcam based putting simulation for GSPRO utilizing the R10 connecter:
 
 Calculation includes BallSpeed in MPH and HLA of the putt. Initial insperation on the solution comes from natter where I forked the initial OpenCV code.
 
