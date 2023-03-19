@@ -2,7 +2,13 @@
 
 Calculation includes BallSpeed in MPH and HLA of the putt. Initial insperation on the solution comes from natter where I forked the initial OpenCV code.
 
-Setup:
+## Setup:
+
+You can find a setup video here: https://youtu.be/ShtEW0fziwM
+
+You can download the release or just install the packages and run the app via python.
+
+Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w <webcamera number 0-5>]
 
 - Position Webcam on the side and above the putting start area across from you - see video for example (flip image in "a" Advanced Settings to allow for left handed setups)
 - Position the Ball (choose the right color or use calibrate as described below.) on a dark green surface - In my test the area visible to the webcam was about 1 meter high and across from me
@@ -19,10 +25,30 @@ Setup:
 - If the ball is not detected try adjusting the light situation or your webcam brightness settings or try a different ball color option (hit q to exit the putting simulator and start again with another Ball Color)
 - The putt needs to cross the red rectangle and needs to leave on the other side
 - If a shot is detected it is send to http://localhost:8888/ where my extension of the garmin connect app (https://github.com/alleexx/gspro-garmin-connect-v2) is receiving the shot and passing it to GSPRO
+  
+## Some Troubleshooting steps if you can not get it to work
 
-You can download the release or just install the packages and run the app via python.
+I guess you saw my setup video so here are some more details.
 
-Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w <webcamera number 0-5>]
+- Make sure to have a solid background. Green putting or hitting mat should be fine - The darker the better.
+- Don't cast a direct shadow over the ball if possible have some light on the ball side
+- Use a colored ball - orange works best for most people with color option orange2
+- Use the advanced settings (hit a) to limit the detection area a bit around the ball placed
+- Use the advanced settings darkness setting to limit the light reflections in the frame. Hopefully the ball will be detected in this way.
+- If this does not help you can hit "d" and see the advanced debug options. It will show you the mask frame and let you see if you have any other "white" = detected spots in the area. It is also possible to directly there change the color seperation options which you could try but hopefully would not be necessary. Some people had to alter saturation and exposure in their webcam settings to get a good base image of the webcam where the colored ball really shows good.
+  
+Software is open source. Feel Free to buy me a coffee or a sleeve of golf balls if you like it.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U6U2I70HX)
+
+<img src="Camera-Putting-Alignment.png">
+
+Here is a short video demonstration of the prototype
+
+https://youtu.be/ZgcH25WkCWQ
+
+  
+## Details on the python app
 
 You can install the necessary packages by running pip install with the requirements file - some mentioned packages might not be necessary to run it as I did not clean it up yet
 
@@ -60,17 +86,6 @@ options:
 
   -d DEBUG, --debug DEBUG     debug - color finder and wait timer
 
-This is early development so happy about feedback but do not base your SGT career on it
-
-Software is open source. Feel Free to buy me a coffee or a sleeve of golf balls if you like it.
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U6U2I70HX)
-
-<img src="Camera-Putting-Alignment.png">
-
-Here is a short video demonstration of the prototype
-
-https://youtu.be/ZgcH25WkCWQ
 
 
 
