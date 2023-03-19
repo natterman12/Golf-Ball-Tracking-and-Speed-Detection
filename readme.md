@@ -1,11 +1,11 @@
-# Webcam based putting simulation for GSPRO utilizing the R10 connecter:
+# Webcam based putting simulation for GSPRO utilizing the R10 connector:
 
 Calculation includes BallSpeed in MPH and HLA of the putt. Initial insperation on the solution comes from natter where I forked the initial OpenCV code.
 
-These 2 connectors integrate the putting app to use in GSPRO
+These connectors integrate the putting app to use in GSPRO
 
-- extension of original R10 connecter of Travis Lang https://github.com/alleexx/gspro-garmin-connect-v2
-- matth version of R10 adapter with direct bluetooth support 
+- extension of original R10 connector of Travis Lang https://github.com/alleexx/gspro-garmin-connect-v2
+- matth version of R10 adapter with direct bluetooth support https://github.com/mholow/gsp-r10-adapter
 
 ## Setup:
 
