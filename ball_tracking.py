@@ -211,7 +211,30 @@ if args.get("ballcolor", False):
         hsvVals = yellow
 
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
-    
+
+def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
+    dim = None
+    (h, w) = image.shape[:2]
+
+    if width is None and height is None:
+        return image
+    if width is None:
+        r = height / float(h)
+        dim = (int(w * r), height)
+    else:
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    return cv2.resize(image, dim, interpolation=inter)
+
+
+# Start Splash Screen
+
+frame = cv2.imread("error.png")
+cv2.putText(frame,"Starting Video: Try MJPEG option in advanced settings for faster startup",(20,100),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
+cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
+
 # Create the color Finder object set to True if you need to Find the color
 
 if args.get("debug", False):
@@ -255,17 +278,26 @@ if not args.get("video", False):
         print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
         print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
         print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
-    
 else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
 
+# set exposure to auto or allow manual setting
+# vs.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
+
 # Get video metadata
+
 video_fps = vs.get(cv2.CAP_PROP_FPS)
 height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = vs.get(cv2.CAP_PROP_FRAME_WIDTH)
 saturation = vs.get(cv2.CAP_PROP_SATURATION)
 exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+
+print("video_fps: "+str(video_fps))
+print("height: "+str(height))
+print("width: "+str(width))
+print("saturation: "+str(saturation))
+print("exposure: "+str(exposure))
 
 
 
@@ -292,20 +324,7 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 #out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
-def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
-    dim = None
-    (h, w) = image.shape[:2]
 
-    if width is None and height is None:
-        return image
-    if width is None:
-        r = height / float(h)
-        dim = (int(w * r), height)
-    else:
-        r = width / float(w)
-        dim = (width, int(h * r))
-
-    return cv2.resize(image, dim, interpolation=inter)
 
 def decode(frame):
     left = np.zeros((400,632,3), np.uint8)
