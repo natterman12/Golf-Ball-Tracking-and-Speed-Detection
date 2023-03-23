@@ -40,6 +40,7 @@ I guess you saw my setup video so here are some more details.
 - Don't cast a direct shadow over the ball if possible have some light on the ball side
 - Use a colored ball - orange works best for most people with color option orange2
 - Use the advanced settings (hit a) to limit the detection area a bit around the ball placed
+- Usage of MJPEG/DirectShow gives also now access to camera properties like saturation/exposure like you have it in kinovea - the window will open alongside if you hit "a" for advanced settings. This should help to find a good camera setting for ball detection. Adjusting the saturation, exposure and white level is helping to get a good reading. As all webcams are different this can not be done automatically and you have to do so manually to get a good result. Try to get a good red circle around the ball and try to eliminate the false detections/radius reading in other parts of the view. 
 - Use the advanced settings darkness setting to limit the light reflections in the frame. Hopefully the ball will be detected in this way.
 - If this does not help you can hit "d" and see the advanced debug options. It will show you the mask frame and let you see if you have any other "white" = detected spots in the area. It is also possible to directly there change the color seperation options which you could try but hopefully would not be necessary. Some people had to alter saturation and exposure in their webcam settings to get a good base image of the webcam where the colored ball really shows good.
   
