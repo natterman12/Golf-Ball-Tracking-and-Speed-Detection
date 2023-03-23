@@ -19,10 +19,11 @@ Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w
 - Position the Ball (choose the right color or use calibrate as described below.) on a dark green surface - In my test the area visible to the webcam was about 1 meter high and across from me
 - Adjust your webcam to the white line to reflect a straight putt and place your ball into the yellow rectangle.
 - Use "a" to go to Advanced Settings - here you can adjust following settings
+  - adjust camera settings by using the DirectShow camera settings window (only supported if MJPEG is enabled = 1 - dafault)
   - the start position rectangle
   - set a fixed radius if the detected radius is not consistent for you
   - flip webcam image if i.e. your a lefty
-  - enable MJPEG option for changing the webcam codec to compressed MJPEG format - some webcams only support higher like 60 FPS settings on compressed video formats - auto detection of FPS settings will not work for this codec but acutal FPS should be accurate
+  - enable MJPEG option for changing the webcam codec to compressed MJPEG format - some webcams only support higher like 60 FPS settings on compressed video formats - auto detection of FPS settings will not work for this codec but acutal FPS should be accurate. In case the desired FPS is only available in certain resolution you can adjust/overwrite the resolution directly in the config.ini file
   - overwrite the detected FPS with a target FPS setting if not detected correctly - not all cameras support setting FPS through OpenCV
   - darken the images in case your webcam settings do not allow for this
   - beta option of ps4 enabling is done in config.ini directly
