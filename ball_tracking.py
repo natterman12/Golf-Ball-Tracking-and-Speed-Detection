@@ -68,6 +68,14 @@ if parser.has_option('putting', 'fps'):
     overwriteFPS=int(parser.get('putting', 'fps'))
 else:
     overwriteFPS=0
+if parser.has_option('putting', 'height'):
+    height=int(parser.get('putting', 'height'))
+else:
+    height=360
+if parser.has_option('putting', 'width'):
+    width=int(parser.get('putting', 'width'))
+else:
+    width=640
 
 
 # Detection Gateway
@@ -210,6 +218,8 @@ if args.get("ballcolor", False):
     else:
         hsvVals = yellow
 
+print("Ballcolor: "+args["ballcolor"])
+
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
 
 def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -263,9 +273,15 @@ if not args.get("video", False):
         vs = cv2.VideoCapture(webcamindex)
     else:
         vs = cv2.VideoCapture(webcamindex + cv2.CAP_DSHOW)
+        # Check if FPS is overwritten in config
+        if overwriteFPS != 0:
+            vs.set(cv2.CAP_PROP_FPS, overwriteFPS)
+            print("Overwrite FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+        if height != 0 and width != 0:
+            vs.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            vs.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         mjpeg = cv2.VideoWriter_fourcc('M','J','P','G')
         vs.set(cv2.CAP_PROP_FOURCC, mjpeg)
-
     if vs.get(cv2.CAP_PROP_BACKEND) == -1:
         message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
     else:
@@ -274,7 +290,7 @@ if not args.get("video", False):
             #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
             vs.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
             vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
-            vs.set(cv2.CAP_PROP_FPS, 120)
+            #vs.set(cv2.CAP_PROP_FPS, 120)
         print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
         print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
         print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
@@ -282,8 +298,10 @@ else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
 
-# set exposure to auto or allow manual setting
-# vs.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
+
+
+
+
 
 # Get video metadata
 
@@ -313,11 +331,6 @@ if type(video_fps) == float:
         new_fps.append(video_fps)
     video_fps = new_fps
 
-# Check if FPS is overwritten in config
-
-if overwriteFPS != 0:
-    vs.set(cv2.CAP_PROP_FPS, overwriteFPS)
-    print("Overwrite FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -341,16 +354,6 @@ def setFPS(value):
     vs.set(cv2.CAP_PROP_FPS,value)
     pass 
 
-def setSaturation(value):
-    print(value)
-    vs.set(cv2.CAP_PROP_SATURATION,value)
-    pass
-
-def setExposure(value):
-    print(value)
-    #vs.set(cv2.CAP_PROP_EXPOSURE,value)
-    pass
-
 def setXStart(value):
     print(value)
     startcoord[0][0]=value
@@ -361,7 +364,6 @@ def setXStart(value):
     parser.set('putting', 'startx1', str(sx1))
     parser.write(open(CFG_FILE, "w"))
     pass
-
 
 def setXEnd(value):
     print(value)
@@ -817,8 +819,10 @@ while True:
         cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
 
     cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-
+    if overwriteFPS != 0:
+        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     # Mark Start Circle
     if started:
         cv2.circle(frame, (startCircle[0],startCircle[1]), startCircle[2],(0, 0, 255), 2)
@@ -988,13 +992,9 @@ while True:
         break
     if key == ord("a"):
         cv2.namedWindow("Advanced Settings")
-        cv2.resizeWindow("Advanced Settings", 760, 400)
-        # cv2.createTrackbar("FPS", "Advanced Settings", int(video_fps[0]),int(video_fps[0]), setFPS)
-        # cv2.setTrackbarPos("FPS","Advanced Settings",int(video_fps[0]))
-        # cv2.createTrackbar("Saturation", "Advanced Settings", 0, 255, setSaturation)
-        #cv2.setTrackbarPos("Saturation","Advanced Settings",int(saturation))
-        # cv2.createTrackbar("Exposure", "Advanced Settings", -10, 10, setExposure)
-        # cv2.setTrackbarPos("Exposure","Advanced Settings",int(exposure))
+        if mjpeg != 0:
+            vs.set(cv2.CAP_PROP_SETTINGS, 37)  
+        cv2.resizeWindow("Advanced Settings", 1000, 400)
         cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
         cv2.createTrackbar("X End", "Advanced Settings", int(sx2), 640, setXEnd)
         cv2.createTrackbar("Y Start", "Advanced Settings", int(y1), 460, setYStart)
