@@ -218,8 +218,11 @@ if args.get("ballcolor", False):
     else:
         hsvVals = yellow
 
-print("Ballcolor: "+args["ballcolor"])
 
+if args["ballcolor"] is not None:
+    print("Ballcolor: "+str(args["ballcolor"]))
+
+    
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
 
 def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
