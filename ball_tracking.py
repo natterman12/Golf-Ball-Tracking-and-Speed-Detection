@@ -995,7 +995,7 @@ while True:
         break
     if key == ord("a"):
         cv2.namedWindow("Advanced Settings")
-        if mjpeg != 0:
+        if mjpegenabled != 0:
             vs.set(cv2.CAP_PROP_SETTINGS, 37)  
         cv2.resizeWindow("Advanced Settings", 1000, 400)
         cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
