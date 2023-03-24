@@ -26,6 +26,9 @@ flipImage = 0
 mjpegenabled = 0
 ps4=0
 overwriteFPS = 0
+replaycam=0
+replaycamindex=0
+replaytimer=0
 
 
 if parser.has_option('putting', 'startx1'):
@@ -76,6 +79,15 @@ if parser.has_option('putting', 'width'):
     width=int(parser.get('putting', 'width'))
 else:
     width=640
+if parser.has_option('putting', 'replaycam'):
+    replaycam=int(parser.get('putting', 'replaycam'))
+else:
+    replaycam=0
+if parser.has_option('putting', 'replaycamindex'):
+    replaycamindex=int(parser.get('putting', 'replaycamindex'))
+else:
+    replaycamindex=0
+
 
 
 # Detection Gateway
@@ -100,6 +112,7 @@ endCircle = (0, 0, 0)
 startPos = (0,0)
 endPos = (0,0)
 startTime = time.time()
+timeSinceEntered = 0
 pixelmmratio = 0
 
 # initialize variable to store start candidates of balls
@@ -222,7 +235,7 @@ if args.get("ballcolor", False):
 if args["ballcolor"] is not None:
     print("Ballcolor: "+str(args["ballcolor"]))
 
-    
+
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
 
 def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -259,6 +272,8 @@ else:
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
 fpsqueue = deque(maxlen=240)
+replay1queue = deque(maxlen=600)
+replay2queue = deque(maxlen=600)
 
 webcamindex = 0
 
@@ -337,6 +352,8 @@ if type(video_fps) == float:
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 #out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
@@ -765,6 +782,7 @@ while True:
                                 # update the points and tims queues
                                 pts.appendleft(center)
                                 tims.appendleft(frameTime)
+                                
                                 break
                             else:
                                 if ( x > coord[1][0] and entered == True and started == True):
@@ -845,20 +863,21 @@ while True:
 
 
     # loop over the set of tracked points
-    for i in range(1, len(pts)):
-        
-        # if either of the tracked points are None, ignore
-        # them
-        if pts[i - 1] is None or pts[i] is None:
-            continue
+    if len(pts) != 0 and entered == True:
+        for i in range(1, len(pts)):
+            
+            # if either of the tracked points are None, ignore
+            # them
+            if pts[i - 1] is None or pts[i] is None:
+                continue
 
-        # otherwise, compute the thickness of the line and
-        # draw the connecting lines
-        thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 1.5)
-        #cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
-        # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
+            # otherwise, compute the thickness of the line and
+            # draw the connecting lines
+            thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 1.5)
+            #cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
+            # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
 
-    timeSinceEntered = (frameTime - tim1)
+        timeSinceEntered = (frameTime - tim1)
 
     if left == True:
 
@@ -972,6 +991,28 @@ while True:
             out2.write(origframe)
         except Exception as e:
             print(e)
+
+    if replay1 is not None and started == True:
+        if timeSinceEntered < 0.5:
+            replay1queue.append(origframe)
+
+    try:
+        if len(replay1queue) > 0 and (entered == True or replaytimer != 0):
+            if tim1 != 0:
+                replaytimer =  tim1
+            replay1frame = replay1queue.pop()
+            replay1.write(replay1frame)
+    except Exception as e:
+        print(e)
+
+    try:
+        if replaytimer != 0 and frameTime - replaytimer > 2 :
+            replay1.release()
+            replaytimer = 0
+            replay1queue.clear()
+    except Exception as e:
+        print(e)
+
     
     # show main putting window
 
@@ -995,7 +1036,7 @@ while True:
         break
     if key == ord("a"):
         cv2.namedWindow("Advanced Settings")
-        if mjpeg != 0:
+        if mjpegenabled != 0:
             vs.set(cv2.CAP_PROP_SETTINGS, 37)  
         cv2.resizeWindow("Advanced Settings", 1000, 400)
         cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
