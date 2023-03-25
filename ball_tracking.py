@@ -28,8 +28,9 @@ ps4=0
 overwriteFPS = 0
 replaycam=0
 replaycamindex=0
-replaytimer=0
+timeSinceTriggered = 0
 replaycamps4 = 0
+replay = False
 
 
 if parser.has_option('putting', 'startx1'):
@@ -137,6 +138,7 @@ speed = 0
 
 tim1 = 0
 tim2 = 0
+replaytrigger = 0
 
 # calibration
 
@@ -277,8 +279,8 @@ else:
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
 fpsqueue = deque(maxlen=240)
-replay1queue = deque(maxlen=600)
-replay2queue = deque(maxlen=600)
+replay1queue = deque(maxlen=1200)
+replay2queue = deque(maxlen=1200)
 
 webcamindex = 0
 
@@ -810,7 +812,8 @@ while True:
                                     else:
                                         pixelmmratio = ballradius / golfballradius
                                     #print("Pixel ratio to mm: " +str(pixelmmratio))    
-                                    started = True            
+                                    started = True
+                                    replay = True            
                                     entered = False
                                     left = False
                                     # update the points and tims queues
@@ -926,7 +929,7 @@ while True:
             # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
 
         timeSinceEntered = (frameTime - tim1)
-        replaytimeSinceEntered = (frameTime - tim1)
+        replaytrigger = tim1
 
     if left == True:
 
@@ -1043,21 +1046,18 @@ while True:
 
     # Record Replay1 Video
 
-    if replay1 is not None and started == True:
-        if timeSinceEntered < 0.5:
+    if replay1 is not None and replay == True:
+        if replaytrigger != 0:
+            timeSinceTriggered = frameTime - replaytrigger
+        if timeSinceTriggered < 5:
             replay1queue.appendleft(origframe)
-
-    
-    # Record Replay2 Video
-
-    if replay2 is not None and started == True:
-        if timeSinceEntered < 0.5:
-            replay2queue.appendleft(origframe2)
+            if replaycam == 1:
+                replay2queue.appendleft(origframe2)
+        else:
+            print("Replay recording stopped")
 
     try:
-        if len(replay1queue) > 0 and (entered == True or replaytimer != 0):
-            if tim1 != 0:
-                replaytimer =  tim1
+        if len(replay1queue) > 0 and replaytrigger != 0:
             replay1frame = replay1queue.pop()
             replay1.write(replay1frame)
             if replaycam == 1:
@@ -1067,12 +1067,22 @@ while True:
         print(e)
 
     try:
-        if replaytimer != 0 and frameTime - replaytimer > 10 :
+        if replaytrigger != 0 and timeSinceTriggered > 5 :
+            while len(replay1queue) > 0:
+                replay1frame = replay1queue.pop()
+                replay1.write(replay1frame)                
             replay1.release()
-            if replaycam == 1:
-                replay2.release()
-            replaytimer = 0
             replay1queue.clear()
+            if replaycam == 1:
+                while len(replay2queue) > 0:
+                    replay2frame = replay2queue.pop()
+                    replay2.write(replay2frame)             
+                replay2.release()
+                replay2queue.clear()
+            replaytrigger = 0
+            timeSinceTriggered = 0
+            replay = False
+            print("Replay released")
     except Exception as e:
         print(e)
 
