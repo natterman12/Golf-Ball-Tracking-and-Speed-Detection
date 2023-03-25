@@ -29,6 +29,7 @@ overwriteFPS = 0
 replaycam=0
 replaycamindex=0
 replaytimer=0
+replaycamps4 = 0
 
 
 if parser.has_option('putting', 'startx1'):
@@ -87,8 +88,10 @@ if parser.has_option('putting', 'replaycamindex'):
     replaycamindex=int(parser.get('putting', 'replaycamindex'))
 else:
     replaycamindex=0
-
-
+if parser.has_option('putting', 'replaycamps4'):
+    replaycamps4=int(parser.get('putting', 'replaycamps4'))
+else:
+    replaycamps4=0
 
 # Detection Gateway
 x1=sx2+10
@@ -257,6 +260,7 @@ def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
 # Start Splash Screen
 
 frame = cv2.imread("error.png")
+origframe2 = cv2.imread("error.png")
 cv2.putText(frame,"Starting Video: Try MJPEG option in advanced settings for faster startup",(20,100),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
 cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
@@ -304,22 +308,17 @@ if not args.get("video", False):
         message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
     else:
         if ps4 == 1:
-            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
-            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
+            vs.set(cv2.CAP_PROP_FPS, 120)
             vs.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
             vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
-            #vs.set(cv2.CAP_PROP_FPS, 120)
+            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
+            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
         print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
         print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
         print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
 else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
-
-
-
-
-
 
 # Get video metadata
 
@@ -335,6 +334,48 @@ print("width: "+str(width))
 print("saturation: "+str(saturation))
 print("exposure: "+str(exposure))
 
+
+
+if replaycam == 1:
+    if replaycamindex == webcamindex:
+        print("Replaycamindex must be different to webcam index")
+        replaycam = 0
+    else:
+
+        print("Replay Cam activated at "+str(replaycamindex))
+
+
+# if a video path was not supplied, grab the reference
+# to the webcam
+if not args.get("video", False) and replaycam == 1:
+    if mjpegenabled == 0:
+        vs2 = cv2.VideoCapture(replaycamindex)
+    else:
+        vs2 = cv2.VideoCapture(replaycamindex + cv2.CAP_DSHOW)
+        # Check if FPS is overwritten in config
+        if overwriteFPS != 0:
+            vs2.set(cv2.CAP_PROP_FPS, overwriteFPS)
+            print("Overwrite FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+        if height != 0 and width != 0:
+            vs2.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            vs2.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        mjpeg = cv2.VideoWriter_fourcc('M','J','P','G')
+        vs2.set(cv2.CAP_PROP_FOURCC, mjpeg)
+    if vs2.get(cv2.CAP_PROP_BACKEND) == -1:
+        message = "No Camera could be opened at webcamera index "+str(replaycamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
+    else:
+        if replaycamps4 == 1:
+            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
+            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
+            vs2.set(cv2.CAP_PROP_FPS, 120)
+            vs2.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
+            vs2.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
+        print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
+        print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
+        print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+else:
+    print("Video given or Replay Cam not activated")
+    replaycam = 0
 
 
 
@@ -541,11 +582,17 @@ while True:
     if args.get("img", False):
         frame = cv2.imread(args["img"])
     else:
-        # check for calibration
+        # get webcam frame
         ret, frame = vs.read()
         if ps4 == 1 and frame is not None:
             leftframe, rightframe = decode(frame)
             frame = leftframe
+        # get replaycam frame
+        if replaycam == 1:
+            ret, origframe2 = vs2.read()
+            if ps4 == 1 and frame is not None:
+                leftframe2, rightframe2 = decode(origframe2)
+                origframe2 = leftframe2
         # flip image on y-axis
         if flipImage == 1 and videofile == False:	
             frame = cv2.flip(frame, flipImage)
@@ -769,7 +816,9 @@ while True:
                                     left = False
                                     # update the points and tims queues
                                     pts.appendleft(center)
-                                    tims.appendleft(frameTime)
+                                    tims.appendleft(frameTime)                                  
+                                    replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+                                    replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
                         else:
 
@@ -992,9 +1041,18 @@ while True:
         except Exception as e:
             print(e)
 
+    # Record Replay1 Video
+
     if replay1 is not None and started == True:
         if timeSinceEntered < 0.5:
-            replay1queue.append(origframe)
+            replay1queue.appendleft(origframe)
+
+    
+    # Record Replay2 Video
+
+    if replay2 is not None and started == True:
+        if timeSinceEntered < 0.5:
+            replay2queue.appendleft(origframe2)
 
     try:
         if len(replay1queue) > 0 and (entered == True or replaytimer != 0):
@@ -1002,16 +1060,25 @@ while True:
                 replaytimer =  tim1
             replay1frame = replay1queue.pop()
             replay1.write(replay1frame)
+            if replaycam == 1:
+                replay2frame = replay2queue.pop()
+                replay2.write(replay2frame)
     except Exception as e:
         print(e)
 
     try:
-        if replaytimer != 0 and frameTime - replaytimer > 2 :
+        if replaytimer != 0 and frameTime - replaytimer > 10 :
             replay1.release()
+            if replaycam == 1:
+                replay2.release()
             replaytimer = 0
             replay1queue.clear()
     except Exception as e:
         print(e)
+
+
+
+
 
     
     # show main putting window
@@ -1067,4 +1134,6 @@ while True:
 
 # close all windows
 vs.release()
+if replaycam == 1:
+    vs2.release()
 cv2.destroyAllWindows()
