@@ -401,13 +401,13 @@ out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120
 
 
 
-def decode(frame):
+def decode(myframe):
     left = np.zeros((400,632,3), np.uint8)
     right = np.zeros((400,632,3), np.uint8)
     
     for i in range(400):
-        left[i] = frame[i, 32: 640 + 24] 
-        right[i] = frame[i, 640 + 24: 640 + 24 + 632] 
+        left[i] = myframe[i, 32: 640 + 24] 
+        right[i] = myframe[i, 640 + 24: 640 + 24 + 632] 
     
     return (left, right)
 
@@ -591,7 +591,7 @@ while True:
         # get replaycam frame
         if replaycam == 1:
             ret, origframe2 = vs2.read()
-            if ps4 == 1 and frame is not None:
+            if replaycamps4 == 1 and origframe2 is not None:
                 leftframe2, rightframe2 = decode(origframe2)
                 origframe2 = leftframe2
         # flip image on y-axis
@@ -678,7 +678,9 @@ while True:
     
     # resize the frame, blur it, and convert it to the HSV
     # color space
-    frame = imutils.resize(frame, width=640, height=360)  
+    frame = imutils.resize(frame, width=640, height=360)
+    origframe2 = imutils.resize(frame, width=640, height=360) 
+    origframe = imutils.resize(frame, width=640, height=360)  
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
