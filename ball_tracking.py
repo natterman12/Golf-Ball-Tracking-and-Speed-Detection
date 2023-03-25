@@ -116,6 +116,7 @@ startPos = (0,0)
 endPos = (0,0)
 startTime = time.time()
 timeSinceEntered = 0
+replaytimeSinceEntered = 0
 pixelmmratio = 0
 
 # initialize variable to store start candidates of balls
@@ -345,9 +346,8 @@ if replaycam == 1:
         print("Replay Cam activated at "+str(replaycamindex))
 
 
-# if a video path was not supplied, grab the reference
-# to the webcam
-if not args.get("video", False) and replaycam == 1:
+# replay is enabled start a 2nd video capture
+if replaycam == 1:
     if mjpegenabled == 0:
         vs2 = cv2.VideoCapture(replaycamindex)
     else:
@@ -374,8 +374,7 @@ if not args.get("video", False) and replaycam == 1:
         print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
         print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
 else:
-    print("Video given or Replay Cam not activated")
-    replaycam = 0
+    print("Replay Cam not activated")
 
 
 
@@ -927,6 +926,7 @@ while True:
             # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
 
         timeSinceEntered = (frameTime - tim1)
+        replaytimeSinceEntered = (frameTime - tim1)
 
     if left == True:
 
