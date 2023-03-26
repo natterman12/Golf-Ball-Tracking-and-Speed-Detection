@@ -290,6 +290,7 @@ message = ""
 # if a webcam index is supplied, grab the reference
 if args.get("camera", False):
     webcamindex = args["camera"]
+    print("Putting Cam activated at "+str(webcamindex))
 
 # if a video path was not supplied, grab the reference
 # to the webcam
@@ -375,6 +376,8 @@ if replaycam == 1:
         print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
         print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
         print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+    replaycamheight = vs2.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    replaycamwidth = vs2.get(cv2.CAP_PROP_FRAME_WIDTH)
 else:
     print("Replay Cam not activated")
 
@@ -394,8 +397,8 @@ if type(video_fps) == float:
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
-replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+#replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+#replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 #out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
@@ -585,15 +588,19 @@ while True:
     else:
         # get webcam frame
         ret, frame = vs.read()
-        if ps4 == 1 and frame is not None:
+        if ps4 == 1 and ret == True:
             leftframe, rightframe = decode(frame)
             frame = leftframe
+            width = 632
+            height = 400
         # get replaycam frame
         if replaycam == 1:
-            ret, origframe2 = vs2.read()
-            if replaycamps4 == 1 and origframe2 is not None:
+            ret2, origframe2 = vs2.read()
+            if replaycamps4 == 1 and ret2 == True:
                 leftframe2, rightframe2 = decode(origframe2)
                 origframe2 = leftframe2
+                replaycamwidth = 632
+                replaycamheight = 400
         # flip image on y-axis
         if flipImage == 1 and videofile == False:	
             frame = cv2.flip(frame, flipImage)
@@ -679,7 +686,7 @@ while True:
     # resize the frame, blur it, and convert it to the HSV
     # color space
     frame = imutils.resize(frame, width=640, height=360)
-    origframe2 = imutils.resize(frame, width=640, height=360) 
+    #origframe2 = imutils.resize(origframe2, width=640, height=360) 
     origframe = imutils.resize(frame, width=640, height=360)  
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -820,9 +827,12 @@ while True:
                                     left = False
                                     # update the points and tims queues
                                     pts.appendleft(center)
-                                    tims.appendleft(frameTime)                                  
+                                    tims.appendleft(frameTime)  
+                                    global replay1
+                                    global replay2
                                     replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
-                                    replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+                                    if replaycam == 1:
+                                        replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(replaycamwidth), int(replaycamheight)))
 
                         else:
 
@@ -1048,7 +1058,7 @@ while True:
 
     # Record Replay1 Video
 
-    if replay1 is not None and replay == True:
+    if replay == True:
         if replaytrigger != 0:
             timeSinceTriggered = frameTime - replaytrigger
         if timeSinceTriggered < 5:
@@ -1108,6 +1118,10 @@ while True:
     if args.get("debug", False):
         cv2.imshow("MaskFrame", mask)
         cv2.imshow("Original", origframe)
+
+    
+    if replaycam == 1:
+        cv2.imshow("Replay Camera", origframe2)
     
     key = cv2.waitKey(1) & 0xFF
     # if the 'q' key is pressed, stop the loop
