@@ -44,7 +44,7 @@ video_fps = vs.get(cv2.CAP_PROP_FPS)
 height = 400 #vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = 632 #vs.get(cv2.CAP_PROP_FRAME_WIDTH)
 
-resizevideo = cv2.VideoWriter("resized"+args["video"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+resizevideo = cv2.VideoWriter("resized-"+args["video"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
 while True:
     ret, origframe = vs.read()
