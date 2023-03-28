@@ -19,18 +19,6 @@ def decode(myframe):
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video",
                 help="path to the (optional) video file")
-ap.add_argument("-i", "--img",
-                help="path to the (optional) image file")
-ap.add_argument("-b", "--buffer", type=int, default=64,
-                help="max buffer size - default is 64")
-ap.add_argument("-w", "--camera", type=int, default=0,
-                help="webcam index number - default is 0")
-ap.add_argument("-c", "--ballcolor",
-                help="ball color - default is white")
-ap.add_argument("-d", "--debug",
-                help="debug - color finder and wait timer")
-ap.add_argument("-r", "--resize", type=int, default=640,
-                help="window resize in width pixel - default is 640px")
 ap.add_argument("-o", "--output",
                 help="path to the (optional) output video file")
 args = vars(ap.parse_args())
