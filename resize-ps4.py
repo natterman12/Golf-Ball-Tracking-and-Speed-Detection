@@ -48,10 +48,10 @@ if args.get("video", False):
     height = 400 #vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
     width = 632 #vs.get(cv2.CAP_PROP_FRAME_WIDTH)
 
-    if args.get("output", False)
+    if args.get("output", False):
         resizevideo = cv2.VideoWriter(args["output"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
     else:
-        resizevideo = cv2.VideoWriter("resized-"+args["video"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+        resizevideo = cv2.VideoWriter(args["video"]+"-resized.mp4", apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
     while True:
         ret, origframe = vs.read()
