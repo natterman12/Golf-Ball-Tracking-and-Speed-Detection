@@ -31,31 +31,40 @@ ap.add_argument("-d", "--debug",
                 help="debug - color finder and wait timer")
 ap.add_argument("-r", "--resize", type=int, default=640,
                 help="window resize in width pixel - default is 640px")
+ap.add_argument("-o", "--output",
+                help="path to the (optional) output video file")
 args = vars(ap.parse_args())
 
 
-vs = cv2.VideoCapture(args["video"])
-videofile = True
+if args.get("video", False):        
 
-# Get video metadata
+    vs = cv2.VideoCapture(args["video"])
+    videofile = True
 
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-video_fps = vs.get(cv2.CAP_PROP_FPS)
-height = 400 #vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
-width = 632 #vs.get(cv2.CAP_PROP_FRAME_WIDTH)
+    # Get video metadata
 
-resizevideo = cv2.VideoWriter("resized-"+args["video"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_fps = vs.get(cv2.CAP_PROP_FPS)
+    height = 400 #vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    width = 632 #vs.get(cv2.CAP_PROP_FRAME_WIDTH)
 
-while True:
-    ret, origframe = vs.read()
-    if ret == True:
-        leftframe, rightframe = decode(origframe)
-        origframe = leftframe
-        resizevideo.write(origframe)
-    if origframe is None:
-        resizevideo.release()
-        break
+    if args.get("output", False)
+        resizevideo = cv2.VideoWriter(args["output"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+    else:
+        resizevideo = cv2.VideoWriter("resized-"+args["video"], apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
-# close all windows
-vs.release()
+    while True:
+        ret, origframe = vs.read()
+        if ret == True:
+            leftframe, rightframe = decode(origframe)
+            origframe = leftframe
+            resizevideo.write(origframe)
+        if origframe is None:
+            resizevideo.release()
+            break
+
+    # close all windows
+    vs.release()
+else:
+    print("video file path must be provided with option -v --video")
 cv2.destroyAllWindows()
