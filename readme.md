@@ -42,8 +42,8 @@ I guess you saw my setup video so here are some more details.
 - Use the advanced settings (hit a) to limit the detection area a bit around the ball placed
 - Usage of MJPEG/DirectShow gives also now access to camera properties like saturation/exposure like you have it in kinovea - the window will open alongside if you hit "a" for advanced settings. This should help to find a good camera setting for ball detection. Adjusting the saturation, exposure and white level is helping to get a good reading. As all webcams are different this can not be done automatically and you have to do so manually to get a good result. Try to get a good red circle around the ball and try to eliminate the false detections/radius reading in other parts of the view. 
 - Use the advanced settings darkness setting to limit the light reflections in the frame. Hopefully the ball will be detected in this way.
-- If this does not help you can hit "d" and see the advanced debug options. It will show you the mask frame and let you see if you have any other "white" = detected spots in the area. It is also possible to directly there change the color seperation options which you could try but hopefully would not be necessary. Some people had to alter saturation and exposure in their webcam settings to get a good base image of the webcam where the colored ball really shows good.
-  
+- If this does not help you can hit "d" and see the advanced debug options. You will see the mask frame which shows white for any detected object having the selected color scheme like "orange2". You can adjust the HSV values of the color scheme with the sliders and the result will be stored in the config.ini file and used to overwrite the color scheme going forward. If you want to reset to the default colors you need to delete the customhsv entry from config.ini file. This is an advanced option - you can read up on HSV and color detection using OpenCV if you are interested. 
+
 Software is open source. Feel Free to buy me a coffee or a sleeve of golf balls if you like it.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U6U2I70HX)
