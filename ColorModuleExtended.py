@@ -50,8 +50,6 @@ class ColorFinder:
         hsvVals = {"hmin": hmin, "smin": smin, "vmin": vmin,
                    "hmax": hmax, "smax": smax, "vmax": vmax}
         
-        print(hsvVals)
-        
         return hsvVals
 
     def setTrackbarValues(self, hsvValues):
@@ -84,8 +82,8 @@ class ColorFinder:
         if self.trackBar:
             myColor = self.getTrackbarValues()
 
-        if isinstance(myColor, str):
-            myColor = self.getColorHSV(myColor)
+        # if isinstance(myColor, str):
+        #     myColor = self.getColorHSV(myColor)
 
         if myColor is not None:
             imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -93,7 +91,7 @@ class ColorFinder:
             upper = np.array([myColor['hmax'], myColor['smax'], myColor['vmax']])
             mask = cv2.inRange(imgHSV, lower, upper)
             imgColor = cv2.bitwise_and(img, img, mask=mask)
-        return imgColor, mask
+        return imgColor, mask, myColor
 
     def getColorHSV(self, myColor):
 

@@ -12,6 +12,7 @@ import math
 from decimal import *
 import requests
 from configparser import ConfigParser
+import ast
 
 parser = ConfigParser()
 CFG_FILE = 'config.ini'
@@ -26,6 +27,7 @@ flipImage = 0
 mjpegenabled = 0
 ps4=0
 overwriteFPS = 0
+customhsv = {}
 
 
 if parser.has_option('putting', 'startx1'):
@@ -76,6 +78,11 @@ if parser.has_option('putting', 'width'):
     width=int(parser.get('putting', 'width'))
 else:
     width=640
+if parser.has_option('putting', 'customhsv'):
+    customhsv=ast.literal_eval(parser.get('putting', 'customhsv'))
+    print(customhsv)
+else:
+    customhsv={}
 
 
 # Detection Gateway
@@ -190,37 +197,43 @@ calibrate = {}
 # default yellow option
 hsvVals = yellow
 
-if args.get("ballcolor", False):
-    if args["ballcolor"] == "white":
-        hsvVals = white
-    elif args["ballcolor"] == "white2":
-        hsvVals = white2
-    elif args["ballcolor"] ==  "yellow":
-        hsvVals = yellow 
-    elif args["ballcolor"] ==  "yellow2":
-        hsvVals = yellow2 
-    elif args["ballcolor"] ==  "orange":
-        hsvVals = orange
-    elif args["ballcolor"] ==  "orange2":
-        hsvVals = orange2
-    elif args["ballcolor"] ==  "orange3":
-        hsvVals = orange3
-    elif args["ballcolor"] ==  "orange4":
-        hsvVals = orange4
-    elif args["ballcolor"] ==  "green":
-        hsvVals = green 
-    elif args["ballcolor"] ==  "green2":
-        hsvVals = green2               
-    elif args["ballcolor"] ==  "red":
-        hsvVals = red             
-    elif args["ballcolor"] ==  "red2":
-        hsvVals = red2             
-    else:
-        hsvVals = yellow
+if customhsv == {}:
+
+    if args.get("ballcolor", False):
+        if args["ballcolor"] == "white":
+            hsvVals = white
+        elif args["ballcolor"] == "white2":
+            hsvVals = white2
+        elif args["ballcolor"] ==  "yellow":
+            hsvVals = yellow 
+        elif args["ballcolor"] ==  "yellow2":
+            hsvVals = yellow2 
+        elif args["ballcolor"] ==  "orange":
+            hsvVals = orange
+        elif args["ballcolor"] ==  "orange2":
+            hsvVals = orange2
+        elif args["ballcolor"] ==  "orange3":
+            hsvVals = orange3
+        elif args["ballcolor"] ==  "orange4":
+            hsvVals = orange4
+        elif args["ballcolor"] ==  "green":
+            hsvVals = green 
+        elif args["ballcolor"] ==  "green2":
+            hsvVals = green2               
+        elif args["ballcolor"] ==  "red":
+            hsvVals = red             
+        elif args["ballcolor"] ==  "red2":
+            hsvVals = red2             
+        else:
+            hsvVals = yellow
+
+        if args["ballcolor"] is not None:
+            print("Ballcolor: "+str(args["ballcolor"]))
+else:
+    hsvVals = customhsv
+    print("Custom HSV Values set in config.ini")
 
 
-if args["ballcolor"] is not None:
-    print("Ballcolor: "+str(args["ballcolor"]))
 
     
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
@@ -623,7 +636,15 @@ while True:
     
     # Find the Color Ball
     
-    imgColor, mask = myColorFinder.update(hsv, hsvVals)
+    imgColor, mask, newHSV = myColorFinder.update(hsv, hsvVals)
+    if hsvVals != newHSV:
+        print(newHSV)
+        parser.set('putting', 'customhsv', str(newHSV)) #['hmin']+newHSV['smin']+newHSV['vmin']+newHSV['hmax']+newHSV['smax']+newHSV['vmax']))
+        parser.write(open(CFG_FILE, "w"))
+        hsvVals = newHSV
+        print("HSV values changed - Custom Color Set to config.ini")
+
+
 
     mask = mask[y1:y2, sx1:640]
 
