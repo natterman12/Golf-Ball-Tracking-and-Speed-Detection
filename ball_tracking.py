@@ -156,7 +156,7 @@ ap.add_argument("-b", "--buffer", type=int, default=64,
 ap.add_argument("-w", "--camera", type=int, default=0,
                 help="webcam index number - default is 0")
 ap.add_argument("-c", "--ballcolor",
-                help="ball color - default is white")
+                help="ball color - default is yellow")
 ap.add_argument("-d", "--debug",
                 help="debug - color finder and wait timer")
 ap.add_argument("-r", "--resize", type=int, default=640,
