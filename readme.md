@@ -32,6 +32,10 @@ Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w
 - The putt needs to cross the red rectangle and needs to leave on the other side
 - If a shot is detected it is send to http://localhost:8888/ where my extension of the garmin connect app (https://github.com/alleexx/gspro-garmin-connect-v2) is receiving the shot and passing it to GSPRO
 
+Here are some collected FAQs you should also read if anything is in question:
+
+FAQ https://github.com/alleexx/gspro-garmin-connect-v2/blob/main/FAQ.md
+
 ## WebCams
 
 I have listed the webcam which were reported to me to work - I can not guarantee these are working in your setup though 
