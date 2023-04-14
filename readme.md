@@ -31,6 +31,12 @@ Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w
 - If the ball is not detected try adjusting the light situation or your webcam brightness settings or try a different ball color option (hit q to exit the putting simulator and start again with another Ball Color)
 - The putt needs to cross the red rectangle and needs to leave on the other side
 - If a shot is detected it is send to http://localhost:8888/ where my extension of the garmin connect app (https://github.com/alleexx/gspro-garmin-connect-v2) is receiving the shot and passing it to GSPRO
+
+## WebCams
+
+I have listed the webcam which were reported to me to work - I can not guarantee these are working in your setup though 
+
+https://github.com/alleexx/gspro-garmin-connect-v2/wiki/Webcam-Compatibility
   
 ## Some Troubleshooting steps if you can not get it to work
 

@@ -1027,6 +1027,7 @@ while True:
         cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
         cv2.createTrackbar("FPS", "Advanced Settings", int(overwriteFPS), 240, setOverwriteFPS)
         cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
+        #cv2.createTrackbar("Rotate", "Advanced Settings", int(rotate), 255, setRotate)
     if key == ord("d"):
         args["debug"] = 1
         myColorFinder = ColorFinder(True)
