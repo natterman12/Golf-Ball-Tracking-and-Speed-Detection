@@ -40,7 +40,7 @@ FAQ https://github.com/alleexx/gspro-garmin-connect-v2/blob/main/FAQ.md
 
 I have listed the webcam which were reported to me to work - I can not guarantee these are working in your setup though 
 
-https://github.com/alleexx/gspro-garmin-connect-v2/wiki/Webcam-Compatibility
+hhttps://github.com/alleexx/cam-putting-py/wiki/Webcam-Compatability
   
 ## Some Troubleshooting steps if you can not get it to work
 
