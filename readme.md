@@ -31,6 +31,16 @@ Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w
 - If the ball is not detected try adjusting the light situation or your webcam brightness settings or try a different ball color option (hit q to exit the putting simulator and start again with another Ball Color)
 - The putt needs to cross the red rectangle and needs to leave on the other side
 - If a shot is detected it is send to http://localhost:8888/ where my extension of the garmin connect app (https://github.com/alleexx/gspro-garmin-connect-v2) is receiving the shot and passing it to GSPRO
+
+Here are some collected FAQs you should also read if anything is in question:
+
+FAQ https://github.com/alleexx/gspro-garmin-connect-v2/blob/main/FAQ.md
+
+## WebCams
+
+I have listed the webcam which were reported to me to work - I can not guarantee these are working in your setup though 
+
+https://github.com/alleexx/cam-putting-py/wiki/Webcam-Compatability
   
 ## Some Troubleshooting steps if you can not get it to work
 
@@ -42,8 +52,8 @@ I guess you saw my setup video so here are some more details.
 - Use the advanced settings (hit a) to limit the detection area a bit around the ball placed
 - Usage of MJPEG/DirectShow gives also now access to camera properties like saturation/exposure like you have it in kinovea - the window will open alongside if you hit "a" for advanced settings. This should help to find a good camera setting for ball detection. Adjusting the saturation, exposure and white level is helping to get a good reading. As all webcams are different this can not be done automatically and you have to do so manually to get a good result. Try to get a good red circle around the ball and try to eliminate the false detections/radius reading in other parts of the view. 
 - Use the advanced settings darkness setting to limit the light reflections in the frame. Hopefully the ball will be detected in this way.
-- If this does not help you can hit "d" and see the advanced debug options. It will show you the mask frame and let you see if you have any other "white" = detected spots in the area. It is also possible to directly there change the color seperation options which you could try but hopefully would not be necessary. Some people had to alter saturation and exposure in their webcam settings to get a good base image of the webcam where the colored ball really shows good.
-  
+- If this does not help you can hit "d" and see the advanced debug options. You will see the mask frame which shows white for any detected object having the selected color scheme like "orange2". You can adjust the HSV values of the color scheme with the sliders and the result will be stored in the config.ini file and used to overwrite the color scheme going forward. If you want to reset to the default colors you need to delete the customhsv entry from config.ini file. This is an advanced option - you can read up on HSV and color detection using OpenCV if you are interested. 
+
 Software is open source. Feel Free to buy me a coffee or a sleeve of golf balls if you like it.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U6U2I70HX)
@@ -54,6 +64,43 @@ Here is a short video demonstration of the prototype
 
 https://youtu.be/ZgcH25WkCWQ
 
+## Available Color Options and HSV values used
+
+#red
+
+red = {'hmin': 1, 'smin': 208, 'vmin': 0, 'hmax': 50, 'smax': 255, 'vmax': 249} # bright environment 
+
+red2 = {'hmin': 1, 'smin': 240, 'vmin': 61, 'hmax': 50, 'smax': 255, 'vmax': 249} # dark environment
+
+#white 
+
+white = {'hmin': 168, 'smin': 218, 'vmin': 118, 'hmax': 179, 'smax': 247, 'vmax': 216} # very bright environment
+
+white2 = {'hmin': 159, 'smin': 217, 'vmin': 152, 'hmax': 179, 'smax': 255, 'vmax': 255} # bright environment 
+
+white3 = {'hmin': 0, 'smin': 181, 'vmin': 0, 'hmax': 42, 'smax': 255, 'vmax': 255}# test environment
+
+#yellow 
+
+yellow = {'hmin': 0, 'smin': 210, 'vmin': 0, 'hmax': 15, 'smax': 255, 'vmax': 255} # bright environment 
+
+yellow2 = {'hmin': 0, 'smin': 150, 'vmin': 100, 'hmax': 46, 'smax': 255, 'vmax': 206} # dark environment
+
+#green 
+
+green = {'hmin': 0, 'smin': 169, 'vmin': 161, 'hmax': 177, 'smax': 204, 'vmax': 255} # bright environment 
+
+green2 = {'hmin': 0, 'smin': 109, 'vmin': 74, 'hmax': 81, 'smax': 193, 'vmax': 117} # dark environment
+
+#orange 
+
+orange = {'hmin': 0, 'smin': 219, 'vmin': 147, 'hmax': 19, 'smax': 255, 'vmax': 255}# bright environment 
+
+orange2 = {'hmin': 3, 'smin': 181, 'vmin': 134, 'hmax': 40, 'smax': 255, 'vmax': 255}# dark environment
+
+orange3 = {'hmin': 0, 'smin': 73, 'vmin': 150, 'hmax': 40, 'smax': 255, 'vmax': 255}# test environment
+
+orange4 = {'hmin': 3, 'smin': 181, 'vmin': 216, 'hmax': 40, 'smax': 255, 'vmax': 255}# custom ps3eye environment
   
 ## Details on the python app
 

@@ -11,8 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            //"args": ["-c=orange2","-w=1","-d=1"] // "-v=Calibration-green4.mp4"  "-i=green2.jpg"
-            "args": ["-v=Calibration-orange2.mp4","-c=orange2"] // "-v=Calibration_1080p_True_60fps.mp4"  "-i=green2.jpg"  ,"-d=1","-w=3"
+            //"args": ["-c=orange2","-w=1","-d=1"]// "-v=Calibration-green4.mp4"  "-i=green2.jpg"
+            "args": ["-c=white","-w=0","-r=640"]// "-v=Calibration_1080p_True_60fps.mp4"  "-i=green2.jpg"  ,"-d=1"
         }
     ]
 }

@@ -12,6 +12,7 @@ import math
 from decimal import *
 import requests
 from configparser import ConfigParser
+import ast
 
 parser = ConfigParser()
 CFG_FILE = 'config.ini'
@@ -26,11 +27,15 @@ flipImage = 0
 mjpegenabled = 0
 ps4=0
 overwriteFPS = 0
+
+customhsv = {}
+
 replaycam=0
 replaycamindex=0
 timeSinceTriggered = 0
 replaycamps4 = 0
 replay = False
+
 
 
 if parser.has_option('putting', 'startx1'):
@@ -57,6 +62,10 @@ if parser.has_option('putting', 'flip'):
     flipImage=int(parser.get('putting', 'flip'))
 else:
     flipImage=0
+if parser.has_option('putting', 'flipview'):
+    flipView=int(parser.get('putting', 'flipview'))
+else:
+    flipView=0
 if parser.has_option('putting', 'darkness'):
     darkness=int(parser.get('putting', 'darkness'))
 else:
@@ -81,6 +90,12 @@ if parser.has_option('putting', 'width'):
     width=int(parser.get('putting', 'width'))
 else:
     width=640
+if parser.has_option('putting', 'customhsv'):
+    customhsv=ast.literal_eval(parser.get('putting', 'customhsv'))
+    print(customhsv)
+else:
+    customhsv={}
+
 if parser.has_option('putting', 'replaycam'):
     replaycam=int(parser.get('putting', 'replaycam'))
 else:
@@ -93,6 +108,7 @@ if parser.has_option('putting', 'replaycamps4'):
     replaycamps4=int(parser.get('putting', 'replaycamps4'))
 else:
     replaycamps4=0
+
 
 # Detection Gateway
 x1=sx2+10
@@ -156,6 +172,10 @@ record = True
 
 videofile = False
 
+# remove duplicate advanced screens for multipla 'a' and 'd' key presses)
+a_key_pressed = False 
+d_key_pressed = False 
+
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -168,7 +188,7 @@ ap.add_argument("-b", "--buffer", type=int, default=64,
 ap.add_argument("-w", "--camera", type=int, default=0,
                 help="webcam index number - default is 0")
 ap.add_argument("-c", "--ballcolor",
-                help="ball color - default is white")
+                help="ball color - default is yellow")
 ap.add_argument("-d", "--debug",
                 help="debug - color finder and wait timer")
 ap.add_argument("-r", "--resize", type=int, default=640,
@@ -201,7 +221,6 @@ orange = {'hmin': 0, 'smin': 219, 'vmin': 147, 'hmax': 19, 'smax': 255, 'vmax': 
 orange2 = {'hmin': 3, 'smin': 181, 'vmin': 134, 'hmax': 40, 'smax': 255, 'vmax': 255}# dark
 orange3 = {'hmin': 0, 'smin': 73, 'vmin': 150, 'hmax': 40, 'smax': 255, 'vmax': 255}# test
 orange4 = {'hmin': 3, 'smin': 181, 'vmin': 216, 'hmax': 40, 'smax': 255, 'vmax': 255}# ps3eye
-#orange4 = {'hmin': 0, 'smin': 0, 'vmin': 147, 'hmax': 81, 'smax': 159, 'vmax': 255} janl?
 
 calibrate = {}
 
@@ -209,37 +228,43 @@ calibrate = {}
 # default yellow option
 hsvVals = yellow
 
-if args.get("ballcolor", False):
-    if args["ballcolor"] == "white":
-        hsvVals = white
-    elif args["ballcolor"] == "white2":
-        hsvVals = white2
-    elif args["ballcolor"] ==  "yellow":
-        hsvVals = yellow 
-    elif args["ballcolor"] ==  "yellow2":
-        hsvVals = yellow2 
-    elif args["ballcolor"] ==  "orange":
-        hsvVals = orange
-    elif args["ballcolor"] ==  "orange2":
-        hsvVals = orange2
-    elif args["ballcolor"] ==  "orange3":
-        hsvVals = orange3
-    elif args["ballcolor"] ==  "orange4":
-        hsvVals = orange4
-    elif args["ballcolor"] ==  "green":
-        hsvVals = green 
-    elif args["ballcolor"] ==  "green2":
-        hsvVals = green2               
-    elif args["ballcolor"] ==  "red":
-        hsvVals = red             
-    elif args["ballcolor"] ==  "red2":
-        hsvVals = red2             
-    else:
-        hsvVals = yellow
+if customhsv == {}:
+
+    if args.get("ballcolor", False):
+        if args["ballcolor"] == "white":
+            hsvVals = white
+        elif args["ballcolor"] == "white2":
+            hsvVals = white2
+        elif args["ballcolor"] ==  "yellow":
+            hsvVals = yellow 
+        elif args["ballcolor"] ==  "yellow2":
+            hsvVals = yellow2 
+        elif args["ballcolor"] ==  "orange":
+            hsvVals = orange
+        elif args["ballcolor"] ==  "orange2":
+            hsvVals = orange2
+        elif args["ballcolor"] ==  "orange3":
+            hsvVals = orange3
+        elif args["ballcolor"] ==  "orange4":
+            hsvVals = orange4
+        elif args["ballcolor"] ==  "green":
+            hsvVals = green 
+        elif args["ballcolor"] ==  "green2":
+            hsvVals = green2               
+        elif args["ballcolor"] ==  "red":
+            hsvVals = red             
+        elif args["ballcolor"] ==  "red2":
+            hsvVals = red2             
+        else:
+            hsvVals = yellow
+
+        if args["ballcolor"] is not None:
+            print("Ballcolor: "+str(args["ballcolor"]))
+else:
+    hsvVals = customhsv
+    print("Custom HSV Values set in config.ini")
 
 
-if args["ballcolor"] is not None:
-    print("Ballcolor: "+str(args["ballcolor"]))
 
 
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
@@ -329,8 +354,19 @@ else:
 video_fps = vs.get(cv2.CAP_PROP_FPS)
 height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = vs.get(cv2.CAP_PROP_FRAME_WIDTH)
-saturation = vs.get(cv2.CAP_PROP_SATURATION)
-exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+
+if parser.has_option('putting', 'saturation'):
+    saturation=float(parser.get('putting', 'saturation'))
+else:
+    saturation = vs.get(cv2.CAP_PROP_SATURATION)
+if parser.has_option('putting', 'exposure'):
+    exposure=float(parser.get('putting', 'exposure'))
+else:
+    exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+    
+vs.set(cv2.CAP_PROP_SATURATION,saturation)
+vs.set(cv2.CAP_PROP_EXPOSURE,exposure)
+
 
 print("video_fps: "+str(video_fps))
 print("height: "+str(height))
@@ -503,6 +539,14 @@ def setFlip(value):
     parser.write(open(CFG_FILE, "w"))
     pass
 
+def setFlipView(value):
+    print(value)    
+    global flipView
+    flipView = int(value)
+    parser.set('putting', 'flipView', str(flipView))
+    parser.write(open(CFG_FILE, "w"))
+    pass
+
 def setMjpeg(value):
     print(value)    
     global mjpegenabled
@@ -533,7 +577,7 @@ def setDarkness(value):
     darkness = int(value)
     parser.set('putting', 'darkness', str(darkness))
     parser.write(open(CFG_FILE, "w"))
-    pass    
+    pass
 
 def GetAngle (p1, p2):
     x1, y1 = p1
@@ -697,7 +741,15 @@ while True:
     
     # Find the Color Ball
     
-    imgColor, mask = myColorFinder.update(hsv, hsvVals)
+    imgColor, mask, newHSV = myColorFinder.update(hsv, hsvVals)
+    if hsvVals != newHSV:
+        print(newHSV)
+        parser.set('putting', 'customhsv', str(newHSV)) #['hmin']+newHSV['smin']+newHSV['vmin']+newHSV['hmax']+newHSV['smax']+newHSV['vmax']))
+        parser.write(open(CFG_FILE, "w"))
+        hsvVals = newHSV
+        print("HSV values changed - Custom Color Set to config.ini")
+
+
 
     mask = mask[y1:y2, sx1:640]
 
@@ -736,6 +788,9 @@ while True:
     cv2.line(frame, (coord[2][0], coord[2][1]), (coord[3][0], coord[3][1]), (0, 0, 255), 2)  # Second horizontal line
     cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 0, 255), 2)  # Vertical right line
 
+    
+    
+
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
     # only proceed if at least one contour was found
     if len(cnts) > 0:
@@ -756,7 +811,7 @@ while True:
             if (tempcentery >= y1 and tempcentery <= y2):
                 rangefactor = 150
                 cv2.drawContours(mask, cnts, index, (60, 255, 255), 1)
-                cv2.putText(frame,"Radius:"+str(int(tempradius)),(int(tempcenterx)+3, int(tempcentery)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+                #cv2.putText(frame,"Radius:"+str(int(tempradius)),(int(tempcenterx)+3, int(tempcentery)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                 # Eliminate countours significantly different than startCircle by comparing radius in range
                 if (started == True and startCircle[2]+rangefactor > tempradius and startCircle[2]-10 < tempradius):
                     x = int(tempcenterx)
@@ -892,21 +947,8 @@ while True:
                                             break
                                     else:
                                         print("False Exit after the Ball")
-                                    
-    cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
-    if ballradius == 0:
-        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    else:
-        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
-
-    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    if overwriteFPS != 0:
-        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    else:
-        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+                                        # flip image on y-axis for view only
     # Mark Start Circle
     if started:
         cv2.circle(frame, (startCircle[0],startCircle[1]), startCircle[2],(0, 0, 255), 2)
@@ -921,6 +963,24 @@ while True:
     if left:
         cv2.circle(frame, (endPos), startCircle[2],(0, 0, 255), 2)
         cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
+
+    if flipView:	
+       frame = cv2.flip(frame, flipView)
+                                    
+    cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    
+    if ballradius == 0:
+        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
+
+    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    if overwriteFPS != 0:
+        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
 
 
@@ -939,6 +999,7 @@ while True:
             thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 1.5)
             #cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
             # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
+
 
         timeSinceEntered = (frameTime - tim1)
         replaytrigger = tim1
@@ -1104,8 +1165,9 @@ while True:
 
     
     # show main putting window
-
+    
     outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
+    
     cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
     
     
@@ -1115,7 +1177,11 @@ while True:
     # Resize the Window
     # cv2.resizeWindow("Putting View: Press q to exit / a for adv. settings", 340, 240)
     
-    if args.get("debug", False):
+    if args.get("debug", False):    
+        # flip image on y-axis for view only
+        if flipView:	
+            mask = cv2.flip(mask, flipView)	
+            origframe = cv2.flip(origframe, flipView)
         cv2.imshow("MaskFrame", mask)
         cv2.imshow("Original", origframe)
 
@@ -1128,23 +1194,54 @@ while True:
     if key == ord("q"):
         break
     if key == ord("a"):
-        cv2.namedWindow("Advanced Settings")
-        if mjpegenabled != 0:
-            vs.set(cv2.CAP_PROP_SETTINGS, 37)  
-        cv2.resizeWindow("Advanced Settings", 1000, 400)
-        cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
-        cv2.createTrackbar("X End", "Advanced Settings", int(sx2), 640, setXEnd)
-        cv2.createTrackbar("Y Start", "Advanced Settings", int(y1), 460, setYStart)
-        cv2.createTrackbar("Y End", "Advanced Settings", int(y2), 460, setYEnd)
-        cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
-        cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
-        cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
-        cv2.createTrackbar("FPS", "Advanced Settings", int(overwriteFPS), 240, setOverwriteFPS)
-        cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
+
+        if not a_key_pressed:
+            cv2.namedWindow("Advanced Settings")
+            if mjpegenabled != 0:
+                vs.set(cv2.CAP_PROP_SETTINGS, 37)  
+            cv2.resizeWindow("Advanced Settings", 1000, 440)
+            cv2.createTrackbar("X Start", "Advanced Settings", int(sx1), 640, setXStart)
+            cv2.createTrackbar("X End", "Advanced Settings", int(sx2), 640, setXEnd)
+            cv2.createTrackbar("Y Start", "Advanced Settings", int(y1), 460, setYStart)
+            cv2.createTrackbar("Y End", "Advanced Settings", int(y2), 460, setYEnd)
+            cv2.createTrackbar("Radius", "Advanced Settings", int(ballradius), 50, setBallRadius)
+            cv2.createTrackbar("Flip Image", "Advanced Settings", int(flipImage), 1, setFlip)
+            cv2.createTrackbar("Flip View", "Advanced Settings", int(flipView), 1, setFlipView)
+            cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
+            cv2.createTrackbar("FPS", "Advanced Settings", int(overwriteFPS), 240, setOverwriteFPS)
+            cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
+            # cv2.createTrackbar("Saturation", "Advanced Settings", int(saturation), 255, setSaturation)
+            # cv2.createTrackbar("Exposure", "Advanced Settings", int(exposure), 255, setExposure)
+            a_key_pressed = True
+        else:
+            cv2.destroyWindow("Advanced Settings")
+
+            exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+            saturation = vs.get(cv2.CAP_PROP_SATURATION)
+
+            print("exposure: "+str(exposure))
+            print("saturation: "+str(saturation))
+
+            parser.set('putting', 'exposure', str(exposure))
+            parser.set('putting', 'saturation', str(saturation))
+
+            parser.write(open(CFG_FILE, "w"))
+
+            a_key_pressed = False
+
     if key == ord("d"):
-        args["debug"] = 1
-        myColorFinder = ColorFinder(True)
-        myColorFinder.setTrackbarValues(hsvVals)
+        if not d_key_pressed:
+            args["debug"] = 1
+            myColorFinder = ColorFinder(True)
+            myColorFinder.setTrackbarValues(hsvVals)
+            d_key_pressed = True
+        else:
+            args["debug"] = 0            
+            myColorFinder = ColorFinder(False)
+            cv2.destroyWindow("Original")
+            cv2.destroyWindow("MaskFrame")
+            cv2.destroyWindow("TrackBars")
+            d_key_pressed = False
 
     if actualFPS > 1:
         grayPreviousFrame = cv2.cvtColor(previousFrame, cv2.COLOR_BGR2GRAY)
