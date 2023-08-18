@@ -27,7 +27,15 @@ flipImage = 0
 mjpegenabled = 0
 ps4=0
 overwriteFPS = 0
+
 customhsv = {}
+
+replaycam=0
+replaycamindex=0
+timeSinceTriggered = 0
+replaycamps4 = 0
+replay = False
+
 
 
 if parser.has_option('putting', 'startx1'):
@@ -88,6 +96,19 @@ if parser.has_option('putting', 'customhsv'):
 else:
     customhsv={}
 
+if parser.has_option('putting', 'replaycam'):
+    replaycam=int(parser.get('putting', 'replaycam'))
+else:
+    replaycam=0
+if parser.has_option('putting', 'replaycamindex'):
+    replaycamindex=int(parser.get('putting', 'replaycamindex'))
+else:
+    replaycamindex=0
+if parser.has_option('putting', 'replaycamps4'):
+    replaycamps4=int(parser.get('putting', 'replaycamps4'))
+else:
+    replaycamps4=0
+
 
 # Detection Gateway
 x1=sx2+10
@@ -111,6 +132,8 @@ endCircle = (0, 0, 0)
 startPos = (0,0)
 endPos = (0,0)
 startTime = time.time()
+timeSinceEntered = 0
+replaytimeSinceEntered = 0
 pixelmmratio = 0
 
 # initialize variable to store start candidates of balls
@@ -131,6 +154,7 @@ speed = 0
 
 tim1 = 0
 tim2 = 0
+replaytrigger = 0
 
 # calibration
 
@@ -242,7 +266,7 @@ else:
 
 
 
-    
+
 calibrationcolor = [("white",white),("white2",white2),("yellow",yellow),("yellow2",yellow2),("orange",orange),("orange2",orange2),("orange3",orange3),("orange4",orange4),("green",green),("green2",green2),("red",red),("red2",red2)]
 
 def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -264,6 +288,7 @@ def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
 # Start Splash Screen
 
 frame = cv2.imread("error.png")
+origframe2 = cv2.imread("error.png")
 cv2.putText(frame,"Starting Video: Try MJPEG option in advanced settings for faster startup",(20,100),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
 cv2.imshow("Putting View: Press q to exit / a for adv. settings", outputframe)
@@ -279,6 +304,8 @@ else:
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
 fpsqueue = deque(maxlen=240)
+replay1queue = deque(maxlen=1200)
+replay2queue = deque(maxlen=1200)
 
 webcamindex = 0
 
@@ -288,6 +315,7 @@ message = ""
 # if a webcam index is supplied, grab the reference
 if args.get("camera", False):
     webcamindex = args["camera"]
+    print("Putting Cam activated at "+str(webcamindex))
 
 # if a video path was not supplied, grab the reference
 # to the webcam
@@ -309,20 +337,17 @@ if not args.get("video", False):
         message = "No Camera could be opened at webcamera index "+str(webcamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
     else:
         if ps4 == 1:
-            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
-            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
+            vs.set(cv2.CAP_PROP_FPS, 120)
             vs.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
             vs.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
-            #vs.set(cv2.CAP_PROP_FPS, 120)
+            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
+            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
         print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
         print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
         print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
 else:
     vs = cv2.VideoCapture(args["video"])
     videofile = True
-
-
-
 
 # Get video metadata
 
@@ -351,6 +376,48 @@ print("exposure: "+str(exposure))
 
 
 
+if replaycam == 1:
+    if replaycamindex == webcamindex:
+        print("Replaycamindex must be different to webcam index")
+        replaycam = 0
+    else:
+
+        print("Replay Cam activated at "+str(replaycamindex))
+
+
+# replay is enabled start a 2nd video capture
+if replaycam == 1:
+    if mjpegenabled == 0:
+        vs2 = cv2.VideoCapture(replaycamindex)
+    else:
+        vs2 = cv2.VideoCapture(replaycamindex + cv2.CAP_DSHOW)
+        # Check if FPS is overwritten in config
+        if overwriteFPS != 0:
+            vs2.set(cv2.CAP_PROP_FPS, overwriteFPS)
+            print("Overwrite FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+        if height != 0 and width != 0:
+            vs2.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            vs2.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        mjpeg = cv2.VideoWriter_fourcc('M','J','P','G')
+        vs2.set(cv2.CAP_PROP_FOURCC, mjpeg)
+    if vs2.get(cv2.CAP_PROP_BACKEND) == -1:
+        message = "No Camera could be opened at webcamera index "+str(replaycamindex)+". If your webcam only supports compressed format MJPEG instead of YUY2 please set MJPEG option to 1"
+    else:
+        if replaycamps4 == 1:
+            #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3448)
+            #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 808)
+            vs2.set(cv2.CAP_PROP_FPS, 120)
+            vs2.set(cv2.CAP_PROP_FRAME_WIDTH, 1724)
+            vs2.set(cv2.CAP_PROP_FRAME_HEIGHT, 404)
+        print("Backend: "+str(vs.get(cv2.CAP_PROP_BACKEND)))
+        print("FourCC: "+str(vs.get(cv2.CAP_PROP_FOURCC)))
+        print("FPS: "+str(vs.get(cv2.CAP_PROP_FPS)))
+    replaycamheight = vs2.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    replaycamwidth = vs2.get(cv2.CAP_PROP_FRAME_WIDTH)
+else:
+    print("Replay Cam not activated")
+
+
 
 if type(video_fps) == float:
     if video_fps == 0.0:
@@ -366,18 +433,20 @@ if type(video_fps) == float:
 
 # we are using x264 codec for mp4
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+#replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 #out1 = cv2.VideoWriter('Ball-New.mp4', apiPreference=0, fourcc=fourcc,fps=video_fps[0], frameSize=(int(width), int(height)))
 out2 = cv2.VideoWriter('Calibration.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
 
 
 
-def decode(frame):
+def decode(myframe):
     left = np.zeros((400,632,3), np.uint8)
     right = np.zeros((400,632,3), np.uint8)
     
     for i in range(400):
-        left[i] = frame[i, 32: 640 + 24] 
-        right[i] = frame[i, 640 + 24: 640 + 24 + 632] 
+        left[i] = myframe[i, 32: 640 + 24] 
+        right[i] = myframe[i, 640 + 24: 640 + 24 + 632] 
     
     return (left, right)
 
@@ -561,11 +630,21 @@ while True:
     if args.get("img", False):
         frame = cv2.imread(args["img"])
     else:
-        # check for calibration
+        # get webcam frame
         ret, frame = vs.read()
-        if ps4 == 1 and frame is not None:
+        if ps4 == 1 and ret == True:
             leftframe, rightframe = decode(frame)
             frame = leftframe
+            width = 632
+            height = 400
+        # get replaycam frame
+        if replaycam == 1:
+            ret2, origframe2 = vs2.read()
+            if replaycamps4 == 1 and ret2 == True:
+                leftframe2, rightframe2 = decode(origframe2)
+                origframe2 = leftframe2
+                replaycamwidth = 632
+                replaycamheight = 400
         # flip image on y-axis
         if flipImage == 1 and videofile == False:	
             frame = cv2.flip(frame, flipImage)
@@ -650,7 +729,9 @@ while True:
     
     # resize the frame, blur it, and convert it to the HSV
     # color space
-    frame = imutils.resize(frame, width=640, height=360)  
+    frame = imutils.resize(frame, width=640, height=360)
+    #origframe2 = imutils.resize(origframe2, width=640, height=360) 
+    origframe = imutils.resize(frame, width=640, height=360)  
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
@@ -795,12 +876,18 @@ while True:
                                     else:
                                         pixelmmratio = ballradius / golfballradius
                                     #print("Pixel ratio to mm: " +str(pixelmmratio))    
-                                    started = True            
+                                    started = True
+                                    replay = True            
                                     entered = False
                                     left = False
                                     # update the points and tims queues
                                     pts.appendleft(center)
-                                    tims.appendleft(frameTime)
+                                    tims.appendleft(frameTime)  
+                                    global replay1
+                                    global replay2
+                                    replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+                                    if replaycam == 1:
+                                        replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(replaycamwidth), int(replaycamheight)))
 
                         else:
 
@@ -813,6 +900,7 @@ while True:
                                 # update the points and tims queues
                                 pts.appendleft(center)
                                 tims.appendleft(frameTime)
+                                
                                 break
                             else:
                                 if ( x > coord[1][0] and entered == True and started == True):
@@ -898,20 +986,24 @@ while True:
 
 
     # loop over the set of tracked points
-    for i in range(1, len(pts)):
-        
-        # if either of the tracked points are None, ignore
-        # them
-        if pts[i - 1] is None or pts[i] is None:
-            continue
+    if len(pts) != 0 and entered == True:
+        for i in range(1, len(pts)):
+            
+            # if either of the tracked points are None, ignore
+            # them
+            if pts[i - 1] is None or pts[i] is None:
+                continue
 
-        # otherwise, compute the thickness of the line and
-        # draw the connecting lines
-        thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 1.5)
-        #cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
-        # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
+            # otherwise, compute the thickness of the line and
+            # draw the connecting lines
+            thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 1.5)
+            #cv2.line(frame, pts[i - 1], pts[i], (0, 0, 150), thickness)
+            # print("Point:"+str(pts[i])+"; Timestamp:"+str(tims[i]))
 
-    timeSinceEntered = (frameTime - tim1)
+
+        timeSinceEntered = (frameTime - tim1)
+        replaytrigger = tim1
+
     if left == True:
 
         # Send Shot Data
@@ -1024,6 +1116,53 @@ while True:
             out2.write(origframe)
         except Exception as e:
             print(e)
+
+    # Record Replay1 Video
+
+    if replay == True:
+        if replaytrigger != 0:
+            timeSinceTriggered = frameTime - replaytrigger
+        if timeSinceTriggered < 5:
+            replay1queue.appendleft(origframe)
+            if replaycam == 1:
+                replay2queue.appendleft(origframe2)
+        else:
+            print("Replay recording stopped")
+
+    try:
+        if len(replay1queue) > 0 and replaytrigger != 0:
+            replay1frame = replay1queue.pop()
+            replay1.write(replay1frame)
+            if replaycam == 1:
+                replay2frame = replay2queue.pop()
+                replay2.write(replay2frame)
+    except Exception as e:
+        print(e)
+
+    try:
+        if replaytrigger != 0 and timeSinceTriggered > 5 :
+            while len(replay1queue) > 0:
+                replay1frame = replay1queue.pop()
+                replay1.write(replay1frame)                
+            replay1.release()
+            replay1queue.clear()
+            if replaycam == 1:
+                while len(replay2queue) > 0:
+                    replay2frame = replay2queue.pop()
+                    replay2.write(replay2frame)             
+                replay2.release()
+                replay2queue.clear()
+            replaytrigger = 0
+            timeSinceTriggered = 0
+            replay = False
+            print("Replay released")
+    except Exception as e:
+        print(e)
+
+
+
+
+
     
     # show main putting window
     
@@ -1045,12 +1184,17 @@ while True:
             origframe = cv2.flip(origframe, flipView)
         cv2.imshow("MaskFrame", mask)
         cv2.imshow("Original", origframe)
+
+    
+    if replaycam == 1:
+        cv2.imshow("Replay Camera", origframe2)
     
     key = cv2.waitKey(1) & 0xFF
     # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
     if key == ord("a"):
+
         if not a_key_pressed:
             cv2.namedWindow("Advanced Settings")
             if mjpegenabled != 0:
@@ -1084,6 +1228,7 @@ while True:
             parser.write(open(CFG_FILE, "w"))
 
             a_key_pressed = False
+
     if key == ord("d"):
         if not d_key_pressed:
             args["debug"] = 1
@@ -1112,4 +1257,6 @@ while True:
 
 # close all windows
 vs.release()
+if replaycam == 1:
+    vs2.release()
 cv2.destroyAllWindows()
