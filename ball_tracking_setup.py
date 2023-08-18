@@ -148,9 +148,8 @@ record = True
 
 videofile = False
 
-# remove duplicate advanced screens for multipla 'a' and 'd' key presses)
+# a_key_pressed (remove duplicate advanced screens for multipla 'a' and 's' key presses)
 a_key_pressed = False 
-d_key_pressed = False 
 
 
 # construct the argument parse and parse the arguments
@@ -260,6 +259,32 @@ def resizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_AREA):
 
     return cv2.resize(image, dim, interpolation=inter)
 
+def list_ports():
+    """
+    Test the ports and returns a tuple with the available ports and the ones that are working.
+    """
+    non_working_ports = []
+    dev_port = 0
+    working_ports = []
+    available_ports = []
+    while len(non_working_ports) < 6: # if there are more than 5 non working ports stop the testing. 
+        camera = cv2.VideoCapture(dev_port)
+        if not camera.isOpened():
+            non_working_ports.append(dev_port)
+            print("Port %s is not working." %dev_port)
+        else:
+            is_reading, img = camera.read()
+            w = camera.get(3)
+            h = camera.get(4)
+            if is_reading:
+                print("Port %s is working and reads images (%s x %s)" %(dev_port,h,w))
+                working_ports.append(dev_port)
+            else:
+                print("Port %s for camera ( %s x %s) is present but does not reads." %(dev_port,h,w))
+                available_ports.append(dev_port)
+        dev_port +=1
+    return available_ports,working_ports,non_working_ports
+
 
 # Start Splash Screen
 
@@ -283,7 +308,6 @@ fpsqueue = deque(maxlen=240)
 webcamindex = 0
 
 message = ""
-
 
 # if a webcam index is supplied, grab the reference
 if args.get("camera", False):
@@ -324,24 +348,15 @@ else:
 
 
 
+
+
 # Get video metadata
 
 video_fps = vs.get(cv2.CAP_PROP_FPS)
 height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT)
 width = vs.get(cv2.CAP_PROP_FRAME_WIDTH)
-
-if parser.has_option('putting', 'saturation'):
-    saturation=float(parser.get('putting', 'saturation'))
-else:
-    saturation = vs.get(cv2.CAP_PROP_SATURATION)
-if parser.has_option('putting', 'exposure'):
-    exposure=float(parser.get('putting', 'exposure'))
-else:
-    exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
-    
-vs.set(cv2.CAP_PROP_SATURATION,saturation)
-vs.set(cv2.CAP_PROP_EXPOSURE,exposure)
-
+saturation = vs.get(cv2.CAP_PROP_SATURATION)
+exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
 
 print("video_fps: "+str(video_fps))
 print("height: "+str(height))
@@ -508,7 +523,7 @@ def setDarkness(value):
     darkness = int(value)
     parser.set('putting', 'darkness', str(darkness))
     parser.write(open(CFG_FILE, "w"))
-    pass
+    pass    
 
 def GetAngle (p1, p2):
     x1, y1 = p1
@@ -708,7 +723,9 @@ while True:
     cv2.line(frame, (coord[1][0], coord[1][1]), (coord[3][0], coord[3][1]), (0, 0, 255), 2)  # Vertical right line
 
     
-    
+    # flip image on y-axis for view only
+    if flipView:	
+       frame = cv2.flip(frame, flipView)
 
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
     # only proceed if at least one contour was found
@@ -730,7 +747,7 @@ while True:
             if (tempcentery >= y1 and tempcentery <= y2):
                 rangefactor = 150
                 cv2.drawContours(mask, cnts, index, (60, 255, 255), 1)
-                #cv2.putText(frame,"Radius:"+str(int(tempradius)),(int(tempcenterx)+3, int(tempcentery)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+                cv2.putText(frame,"Radius:"+str(int(tempradius)),(int(tempcenterx)+3, int(tempcentery)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                 # Eliminate countours significantly different than startCircle by comparing radius in range
                 if (started == True and startCircle[2]+rangefactor > tempradius and startCircle[2]-10 < tempradius):
                     x = int(tempcenterx)
@@ -859,8 +876,21 @@ while True:
                                             break
                                     else:
                                         print("False Exit after the Ball")
+                                    
+    cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
-                                        # flip image on y-axis for view only
+    if ballradius == 0:
+        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
+
+    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    if overwriteFPS != 0:
+        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     # Mark Start Circle
     if started:
         cv2.circle(frame, (startCircle[0],startCircle[1]), startCircle[2],(0, 0, 255), 2)
@@ -875,24 +905,6 @@ while True:
     if left:
         cv2.circle(frame, (endPos), startCircle[2],(0, 0, 255), 2)
         cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
-
-    if flipView:	
-       frame = cv2.flip(frame, flipView)
-                                    
-    cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    
-    if ballradius == 0:
-        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    else:
-        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
-
-    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    if overwriteFPS != 0:
-        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    else:
-        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
 
 
@@ -1066,37 +1078,15 @@ while True:
             cv2.createTrackbar("MJPEG", "Advanced Settings", int(mjpegenabled), 1, setMjpeg)
             cv2.createTrackbar("FPS", "Advanced Settings", int(overwriteFPS), 240, setOverwriteFPS)
             cv2.createTrackbar("Darkness", "Advanced Settings", int(darkness), 255, setDarkness)
-            # cv2.createTrackbar("Saturation", "Advanced Settings", int(saturation), 255, setSaturation)
-            # cv2.createTrackbar("Exposure", "Advanced Settings", int(exposure), 255, setExposure)
+            #cv2.createTrackbar("Rotate", "Advanced Settings", int(rotate), 255, setRotate)
             a_key_pressed = True
         else:
             cv2.destroyWindow("Advanced Settings")
-
-            exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
-            saturation = vs.get(cv2.CAP_PROP_SATURATION)
-
-            print("exposure: "+str(exposure))
-            print("saturation: "+str(saturation))
-
-            parser.set('putting', 'exposure', str(exposure))
-            parser.set('putting', 'saturation', str(saturation))
-
-            parser.write(open(CFG_FILE, "w"))
-
             a_key_pressed = False
     if key == ord("d"):
-        if not d_key_pressed:
-            args["debug"] = 1
-            myColorFinder = ColorFinder(True)
-            myColorFinder.setTrackbarValues(hsvVals)
-            d_key_pressed = True
-        else:
-            args["debug"] = 0            
-            myColorFinder = ColorFinder(False)
-            cv2.destroyWindow("Original")
-            cv2.destroyWindow("MaskFrame")
-            cv2.destroyWindow("TrackBars")
-            d_key_pressed = False
+        args["debug"] = 1
+        myColorFinder = ColorFinder(True)
+        myColorFinder.setTrackbarValues(hsvVals)
 
     if actualFPS > 1:
         grayPreviousFrame = cv2.cvtColor(previousFrame, cv2.COLOR_BGR2GRAY)
