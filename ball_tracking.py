@@ -731,7 +731,7 @@ while True:
     # color space
     frame = imutils.resize(frame, width=640, height=360)
     #origframe2 = imutils.resize(origframe2, width=640, height=360) 
-    origframe = imutils.resize(frame, width=640, height=360)  
+    #origframe = imutils.resize(frame, width=640, height=360)  
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
@@ -1158,12 +1158,7 @@ while True:
             print("Replay released")
     except Exception as e:
         print(e)
-
-
-
-
-
-    
+  
     # show main putting window
     
     outputframe = resizeWithAspectRatio(frame, width=int(args["resize"]))
