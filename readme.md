@@ -13,7 +13,7 @@ You can find a setup video here: https://youtu.be/ShtEW0fziwM
 
 You can download the release or just install the packages and run the app via python.
 
-Unpack the release zip and run ball_tracking.exe [-c <ballcolor OR calibrate> -w <webcamera number 0-5>]
+Unpack the release zip and run ball_tracking.exe [-c (ballcolor OR calibrate) -w <webcamera number 0-5>]
 
 - Position Webcam on the side and above the putting start area across from you - see video for example (flip image in "a" Advanced Settings to allow for left handed setups)
 - Position the Ball (choose the right color or use calibrate as described below.) on a dark green surface - In my test the area visible to the webcam was about 1 meter high and across from me
