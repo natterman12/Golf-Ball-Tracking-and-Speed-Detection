@@ -109,6 +109,10 @@ if parser.has_option('putting', 'replaycamps4'):
 else:
     replaycamps4=0
 
+# Globals
+
+# grab the replay video
+vs_replay1 = cv2.VideoCapture('Replay1.mp4')
 
 # Detection Gateway
 x1=sx2+10
@@ -363,9 +367,20 @@ if parser.has_option('putting', 'exposure'):
     exposure=float(parser.get('putting', 'exposure'))
 else:
     exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
+if parser.has_option('putting', 'whiteBalanceBlue'):
+    whiteBalanceBlue=float(parser.get('putting', 'whiteBalanceBlue'))
+else:
+    whiteBalanceBlue = vs.get(cv2.CAP_PROP_WHITE_BALANCE_BLUE_U)
+if parser.has_option('putting', 'whiteBalanceRed'):
+    whiteBalanceRed=float(parser.get('putting', 'whiteBalanceRed'))
+else:
+    whiteBalanceRed = vs.get(cv2.CAP_PROP_WHITE_BALANCE_RED_V)
     
 vs.set(cv2.CAP_PROP_SATURATION,saturation)
 vs.set(cv2.CAP_PROP_EXPOSURE,exposure)
+vs.set(cv2.CAP_PROP_WHITE_BALANCE_BLUE_U,whiteBalanceBlue)
+vs.set(cv2.CAP_PROP_WHITE_BALANCE_RED_V,whiteBalanceRed)
+
 
 
 print("video_fps: "+str(video_fps))
@@ -809,11 +824,11 @@ while True:
             tempcenterx = tempcenterx + sx1
             tempcentery = tempcentery + y1
             if (tempcentery >= y1 and tempcentery <= y2):
-                rangefactor = 150
+                rangefactor = 50
                 cv2.drawContours(mask, cnts, index, (60, 255, 255), 1)
                 #cv2.putText(frame,"Radius:"+str(int(tempradius)),(int(tempcenterx)+3, int(tempcentery)),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
                 # Eliminate countours significantly different than startCircle by comparing radius in range
-                if (started == True and startCircle[2]+rangefactor > tempradius and startCircle[2]-10 < tempradius):
+                if (started == True and startCircle[2]+rangefactor > tempradius and startCircle[2]-rangefactor < tempradius):
                     x = int(tempcenterx)
                     y = int(tempcentery)
                     radius = int(tempradius)
@@ -1145,6 +1160,8 @@ while True:
                 replay1frame = replay1queue.pop()
                 replay1.write(replay1frame)                
             replay1.release()
+            # grab the replay video
+            # vs_replay1 = cv2.VideoCapture('Replay1.mp4')
             replay1queue.clear()
             if replaycam == 1:
                 while len(replay2queue) > 0:
@@ -1158,6 +1175,12 @@ while True:
             print("Replay released")
     except Exception as e:
         print(e)
+
+    # if vs_replay1:
+    #     # grab the current frame from Replay1
+    #     _, frame_vs_replay1 = vs_replay1.read()
+    #     if frame_vs_replay1 is not None:
+    #         cv2.imshow("Replay1", frame_vs_replay1)
   
     # show main putting window
     
@@ -1213,12 +1236,19 @@ while True:
 
             exposure = vs.get(cv2.CAP_PROP_EXPOSURE)
             saturation = vs.get(cv2.CAP_PROP_SATURATION)
+            whiteBalanceBlue = vs.get(cv2.CAP_PROP_WHITE_BALANCE_BLUE_U)
+            whiteBalanceRed = vs.get(cv2.CAP_PROP_WHITE_BALANCE_RED_V)
+
 
             print("exposure: "+str(exposure))
             print("saturation: "+str(saturation))
+            print("whiteBalanceBlue: "+str(whiteBalanceBlue))
+            print("whiteBalanceRed: "+str(whiteBalanceRed))
 
             parser.set('putting', 'exposure', str(exposure))
             parser.set('putting', 'saturation', str(saturation))
+            parser.set('putting', 'whiteBalanceBlue', str(whiteBalanceBlue))
+            parser.set('putting', 'whiteBalanceRed', str(whiteBalanceRed))
 
             parser.write(open(CFG_FILE, "w"))
 
