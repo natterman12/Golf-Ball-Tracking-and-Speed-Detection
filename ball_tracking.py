@@ -964,38 +964,7 @@ while True:
                                         print("False Exit after the Ball")
 
                                         # flip image on y-axis for view only
-    # Mark Start Circle
-    if started:
-        cv2.circle(frame, (startCircle[0],startCircle[1]), startCircle[2],(0, 0, 255), 2)
-        cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1) 
 
-    # Mark Entered Circle
-    if entered:
-        cv2.circle(frame, (startPos), startCircle[2],(0, 0, 255), 2)
-        cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
-
-    # Mark Exit Circle
-    if left:
-        cv2.circle(frame, (endPos), startCircle[2],(0, 0, 255), 2)
-        cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
-
-    if flipView:	
-       frame = cv2.flip(frame, flipView)
-                                    
-    cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    
-    if ballradius == 0:
-        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    else:
-        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
-
-    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    if overwriteFPS != 0:
-        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
-    else:
-        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
 
 
 
@@ -1114,14 +1083,49 @@ while True:
 
     if not lastShotSpeed == 0:
         cv2.line(frame,(lastShotStart),(lastShotEnd),(0, 255, 255),4,cv2.LINE_AA)      
-        cv2.putText(frame,"Last Shot",(400,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
-        cv2.putText(frame,"Ball Speed: %.2f" % lastShotSpeed+" MPH",(400,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
-        cv2.putText(frame,"HLA:  %.2f" % lastShotHLA+" Degrees",(400,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
     
     if started:
         cv2.line(frame,(sx2,startCircle[1]),(sx2+400,startCircle[1]),(255, 255, 255),4,cv2.LINE_AA)
     else:
         cv2.line(frame,(sx2,int(y1+((y2-y1)/2))),(sx2+400,int(y1+((y2-y1)/2))),(255, 255, 255),4,cv2.LINE_AA) 
+
+        # Mark Start Circle
+    if started:
+        cv2.circle(frame, (startCircle[0],startCircle[1]), startCircle[2],(0, 0, 255), 2)
+        cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1) 
+
+    # Mark Entered Circle
+    if entered:
+        cv2.circle(frame, (startPos), startCircle[2],(0, 0, 255), 2)
+        cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
+
+    # Mark Exit Circle
+    if left:
+        cv2.circle(frame, (endPos), startCircle[2],(0, 0, 255), 2)
+        cv2.circle(frame, (startCircle[0],startCircle[1]), 5, (0, 0, 255), -1)  
+
+    if flipView:	
+       frame = cv2.flip(frame, -1)
+                                    
+    cv2.putText(frame,"Start Ball",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"x:"+str(startCircle[0]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    cv2.putText(frame,"y:"+str(startCircle[1]),(20,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+
+    if not lastShotSpeed == 0:
+        cv2.putText(frame,"Last Shot",(400,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
+        cv2.putText(frame,"Ball Speed: %.2f" % lastShotSpeed+" MPH",(400,60),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
+        cv2.putText(frame,"HLA:  %.2f" % lastShotHLA+" Degrees",(400,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255),1)
+    
+    if ballradius == 0:
+        cv2.putText(frame,"radius:"+str(startCircle[2]),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"radius:"+str(startCircle[2])+" fixed at "+str(ballradius),(20,80),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))    
+
+    cv2.putText(frame,"Actual FPS: %.2f" % fps,(200,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    if overwriteFPS != 0:
+        cv2.putText(frame,"Fixed FPS: %.2f" % overwriteFPS,(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
+    else:
+        cv2.putText(frame,"Detected FPS: %.2f" % video_fps[0],(400,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0, 0, 255))
     
     #if args.get("video", False):
     #    out1.write(frame)
