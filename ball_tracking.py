@@ -35,6 +35,7 @@ replaycamindex=0
 timeSinceTriggered = 0
 replaycamps4 = 0
 replay = False
+noOfStarts = 0
 
 
 
@@ -308,8 +309,8 @@ else:
 pts = deque(maxlen=args["buffer"])
 tims = deque(maxlen=args["buffer"])
 fpsqueue = deque(maxlen=240)
-replay1queue = deque(maxlen=1200)
-replay2queue = deque(maxlen=1200)
+replay1queue = deque(maxlen=240)
+replay2queue = deque(maxlen=240)
 
 webcamindex = 0
 
@@ -876,6 +877,7 @@ while True:
                                 #print(filtered)
                                 if len(filtered) >= (startminimum/2):
                                     print("New Start Found")
+                                    noOfStarts = noOfStarts + 1
                                     lastShotSpeed = 0
                                     pts.clear()
                                     tims.clear()
@@ -892,7 +894,8 @@ while True:
                                         pixelmmratio = ballradius / golfballradius
                                     #print("Pixel ratio to mm: " +str(pixelmmratio))    
                                     started = True
-                                    replay = True            
+                                    replay = True
+                                    replaytrigger = 0          
                                     entered = False
                                     left = False
                                     # update the points and tims queues
@@ -900,9 +903,10 @@ while True:
                                     tims.appendleft(frameTime)  
                                     global replay1
                                     global replay2
-                                    replay1 = cv2.VideoWriter('Replay1.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
+
+                                    replay1 = cv2.VideoWriter('replay1/Replay1_'+ str(noOfStarts) +'.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(width), int(height)))
                                     if replaycam == 1:
-                                        replay2 = cv2.VideoWriter('Replay2.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(replaycamwidth), int(replaycamheight)))
+                                        replay2 = cv2.VideoWriter('replay2/Replay2_'+ str(noOfStarts) +'.mp4', apiPreference=0, fourcc=fourcc,fps=120, frameSize=(int(replaycamwidth), int(replaycamheight)))
 
                         else:
 
@@ -1063,6 +1067,7 @@ while True:
             started = False
             entered = False
             left = False
+            replay = False
             speed = 0
             timeSinceEntered = 0
             tim1 = 0
@@ -1141,7 +1146,7 @@ while True:
     if replay == True:
         if replaytrigger != 0:
             timeSinceTriggered = frameTime - replaytrigger
-        if timeSinceTriggered < 5:
+        if timeSinceTriggered < 3:
             replay1queue.appendleft(origframe)
             if replaycam == 1:
                 replay2queue.appendleft(origframe2)
@@ -1159,11 +1164,12 @@ while True:
         print(e)
 
     try:
-        if replaytrigger != 0 and timeSinceTriggered > 5 :
+        if replaytrigger != 0 and timeSinceTriggered > 3 :
             while len(replay1queue) > 0:
                 replay1frame = replay1queue.pop()
                 replay1.write(replay1frame)                
             replay1.release()
+            print("Replay 1 released")
             # grab the replay video
             # vs_replay1 = cv2.VideoCapture('Replay1.mp4')
             replay1queue.clear()
@@ -1172,11 +1178,12 @@ while True:
                     replay2frame = replay2queue.pop()
                     replay2.write(replay2frame)             
                 replay2.release()
+                print("Replay 2 released")
                 replay2queue.clear()
             replaytrigger = 0
             timeSinceTriggered = 0
             replay = False
-            print("Replay released")
+            print("Replay reset")
     except Exception as e:
         print(e)
 
